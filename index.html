@@ -1,0 +1,2309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SES Titan of Liberty — Fleet Command Terminal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --steel-950: #14181c;
+    --steel-900: #1b2126;
+    --steel-800: #262e35;
+    --steel-700: #384049;
+    --steel-600: #56606a;
+    --paper: #e9e4d6;
+    --paper-dim: #b7b0a0;
+    --hazard: #f2b705;
+    --hazard-dim: #8a6d1f;
+    --blood: #c23b3b;
+    --blood-dim: #6e2a2a;
+    --victory: #6fae4a;
+    --signal: #5f9bbf;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background:
+      repeating-linear-gradient(135deg, rgba(0,0,0,0.15) 0px, rgba(0,0,0,0.15) 2px, transparent 2px, transparent 14px),
+      radial-gradient(ellipse at top, var(--steel-800), var(--steel-950) 70%);
+    color: var(--paper);
+    font-family: 'IBM Plex Mono', monospace;
+    min-height: 100vh;
+    padding: 14px 16px 60px;
+  }
+  .frame { max-width: 820px; margin: 0 auto; }
+
+  /* classification banner */
+  .classbar {
+    border: 1px solid var(--blood-dim);
+    background: repeating-linear-gradient(45deg, rgba(194,59,59,0.10) 0 10px, transparent 10px 20px);
+    color: var(--blood);
+    font-family: 'Oswald', sans-serif;
+    font-size: 10.5px; letter-spacing: 2.5px; text-transform: uppercase;
+    padding: 6px 10px; text-align: center; margin-bottom: 10px;
+  }
+
+  .header {
+    border: 2px solid var(--hazard-dim);
+    background: linear-gradient(180deg, var(--steel-900), var(--steel-800));
+    padding: 20px 22px 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: "";
+    position: absolute; top: 0; left: 0; right: 0; height: 6px;
+    background: repeating-linear-gradient(90deg, var(--hazard) 0 18px, var(--steel-950) 18px 36px);
+    opacity: 0.85;
+  }
+  .header-inner { display: flex; gap: 18px; align-items: center; }
+  .seal { width: 66px; height: 66px; flex-shrink: 0; opacity: 0.9; }
+  .authority { font-family: 'Oswald', sans-serif; font-size: 11px; letter-spacing: 2.5px; color: var(--paper-dim); text-transform: uppercase; margin-bottom: 2px; }
+  .designation { font-family: 'Oswald', sans-serif; font-size: 12px; letter-spacing: 3px; color: var(--hazard); text-transform: uppercase; margin: 6px 0 2px; }
+  .shipname { font-family: 'Oswald', sans-serif; font-size: clamp(26px, 6vw, 40px); font-weight: 700; letter-spacing: 1px; margin: 0; line-height: 1.05; }
+  .subline { font-size: 13px; color: var(--paper-dim); margin-top: 8px; }
+
+  .chrono {
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+    margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--steel-700);
+    font-size: 11.5px; color: var(--paper-dim); letter-spacing: 0.5px;
+  }
+  .chrono b { font-family: 'Oswald', sans-serif; color: var(--hazard); letter-spacing: 1.5px; font-weight: 600; }
+
+  .panel { border: 1px solid var(--steel-700); background: rgba(20, 24, 28, 0.5); margin-top: 14px; padding: 18px 20px; }
+  .panel-title { font-family: 'Oswald', sans-serif; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; color: var(--paper-dim); margin: 0 0 14px; border-bottom: 1px solid var(--steel-700); padding-bottom: 8px; display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .panel-title .tag { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: 1px; color: var(--steel-600); }
+
+  /* readiness strip */
+  .strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+  .strip-cell { border: 1px solid var(--steel-700); background: rgba(0,0,0,0.25); padding: 9px 11px; }
+  .strip-cell .k { font-size: 10px; letter-spacing: 1px; color: var(--steel-600); text-transform: uppercase; }
+  .strip-cell .v { font-family: 'Oswald', sans-serif; font-size: 19px; margin-top: 3px; letter-spacing: 0.5px; }
+
+  /* form controls */
+  .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field.full { grid-column: 1 / -1; }
+  .field label { font-size: 11px; letter-spacing: 1px; color: var(--paper-dim); text-transform: uppercase; }
+  select, input[type="text"], input[type="number"], textarea {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    background: var(--steel-950);
+    color: var(--paper);
+    border: 1px solid var(--steel-700);
+    padding: 9px 10px;
+    width: 100%;
+  }
+  textarea { resize: vertical; min-height: 62px; line-height: 1.5; }
+  select:focus, input:focus, textarea:focus, button:focus-visible { outline: 2px solid var(--hazard); outline-offset: 1px; }
+  .hint { font-size: 10.5px; color: var(--steel-600); margin-top: 2px; }
+
+  .duration-row { display: flex; align-items: center; gap: 10px; }
+  input[type="range"] { flex: 1; accent-color: var(--hazard); }
+  .duration-days { font-family: 'Oswald', sans-serif; font-size: 15px; color: var(--hazard); min-width: 62px; text-align: right; }
+
+  button.deploy {
+    font-family: 'Oswald', sans-serif; font-size: 16px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--steel-950); background: var(--hazard); border: none; padding: 14px 30px; cursor: pointer; width: 100%;
+    clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
+    transition: transform 0.1s ease, background 0.2s ease;
+  }
+  button.deploy:hover:not(:disabled) { background: #ffc933; transform: translateY(-1px); }
+  button.deploy:active:not(:disabled) { transform: translateY(1px); }
+  button.deploy:disabled { background: var(--steel-700); color: var(--paper-dim); cursor: not-allowed; clip-path: none; }
+  .cooldown-note { font-size: 11.5px; color: var(--paper-dim); margin-top: 8px; letter-spacing: 0.5px; }
+
+  button.secondary {
+    font-family: 'Oswald', sans-serif; font-size: 12.5px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--paper); background: var(--steel-700); border: 1px solid var(--steel-600); padding: 9px 16px; cursor: pointer;
+  }
+  button.secondary:hover:not(:disabled) { background: var(--steel-600); }
+  button.secondary:disabled { opacity: 0.45; cursor: not-allowed; }
+  button.secondary.wide { width: 100%; margin-top: 10px; }
+
+  /* operations board */
+  .ops-list { display: flex; flex-direction: column; gap: 12px; margin-top: 4px; }
+  .op {
+    border: 1px solid var(--steel-700); border-left: 4px solid var(--steel-600);
+    background: rgba(0,0,0,0.28); padding: 14px 16px;
+  }
+  .op.gain { border-left-color: var(--signal); }
+  .op.signature { border-left-color: var(--hazard); }
+  .op-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .op-code { font-family: 'Oswald', sans-serif; font-size: 15px; letter-spacing: 1.5px; color: var(--paper); }
+  .op-risk { font-family: 'Oswald', sans-serif; font-size: 10.5px; letter-spacing: 1.5px; padding: 2px 7px; border: 1px solid currentColor; white-space: nowrap; }
+  .risk-low { color: var(--victory); }
+  .risk-moderate { color: var(--signal); }
+  .risk-high { color: var(--hazard); }
+  .risk-extreme { color: var(--blood); }
+  .op-meta { font-size: 11px; color: var(--steel-600); letter-spacing: 0.5px; margin-top: 3px; }
+  .op-desc { font-size: 12.5px; color: var(--paper-dim); line-height: 1.6; margin: 9px 0 10px; }
+  .op-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 11.5px; }
+  .op-cols h5 { margin: 0 0 5px; font-family: 'Oswald', sans-serif; font-size: 11px; letter-spacing: 1.5px; color: var(--paper-dim); font-weight: 500; text-transform: uppercase; }
+  .op-cols div.box { border: 1px solid var(--steel-700); padding: 8px 10px; background: rgba(0,0,0,0.2); }
+  .cost-line { color: var(--paper-dim); line-height: 1.7; }
+  .cost-line.short { color: var(--blood); }
+  .yield-line { color: #8fc36c; line-height: 1.7; }
+  .op-flag { display: inline-block; font-size: 10px; letter-spacing: 1.5px; color: var(--signal); border: 1px solid var(--signal); padding: 1px 6px; margin-top: 9px; }
+  button.op-launch {
+    font-family: 'Oswald', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--steel-950); background: var(--hazard); border: none; padding: 10px 18px; cursor: pointer; width: 100%; margin-top: 12px;
+  }
+  button.op-launch:hover:not(:disabled) { background: #ffc933; }
+  button.op-launch:disabled { background: var(--steel-700); color: var(--paper-dim); cursor: not-allowed; }
+  .ops-empty { font-size: 12.5px; color: var(--paper-dim); font-style: italic; padding: 4px 0 2px; line-height: 1.6; }
+
+  /* ship diagram */
+  .ship-diagram-wrap { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
+  .ship-svg { width: 140px; flex-shrink: 0; }
+  .parts-list { flex: 1; min-width: 220px; }
+  .part-row { margin-bottom: 10px; }
+  .part-row:last-child { margin-bottom: 0; }
+  .part-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--paper-dim); margin-bottom: 4px; gap: 8px; }
+  .part-label span.val { color: var(--paper); font-weight: 600; }
+  .bar-track { height: 8px; background: var(--steel-950); border: 1px solid var(--steel-700); overflow: hidden; }
+  .bar-fill { height: 100%; transition: width 0.6s ease; }
+
+  .warning-banner {
+    border: 1px solid var(--blood);
+    background: rgba(194, 59, 59, 0.12);
+    color: var(--paper);
+    padding: 10px 14px;
+    font-size: 12.5px;
+    margin-top: 14px;
+    line-height: 1.5;
+  }
+  .warning-banner strong { color: var(--blood); font-family: 'Oswald', sans-serif; letter-spacing: 0.5px; }
+
+  /* stores */
+  .store-row { margin-bottom: 13px; }
+  .store-row:last-child { margin-bottom: 0; }
+  .store-head { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; color: var(--paper-dim); margin-bottom: 4px; gap: 10px; }
+  .store-head .amt { font-family: 'Oswald', sans-serif; font-size: 14px; color: var(--paper); letter-spacing: 0.5px; }
+  .store-head .amt small { color: var(--steel-600); font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; }
+  .store-desc { font-size: 10.5px; color: var(--steel-600); margin-top: 3px; }
+
+  /* console rows */
+  details.console { border: 1px solid var(--steel-700); background: rgba(20,24,28,0.5); margin-top: 14px; }
+  details.console > summary {
+    cursor: pointer; list-style: none; padding: 14px 20px;
+    font-family: 'Oswald', sans-serif; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; color: var(--paper-dim);
+    display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  }
+  details.console > summary::-webkit-details-marker { display: none; }
+  details.console > summary::after { content: "▸"; color: var(--hazard); }
+  details.console[open] > summary::after { content: "▾"; }
+  details.console > summary:hover { color: var(--paper); }
+  .console-body { padding: 0 20px 18px; }
+  .console-intro { font-size: 11.5px; color: var(--steel-600); line-height: 1.6; margin: 0 0 14px; padding-top: 10px; border-top: 1px solid var(--steel-700); }
+  .alloc-row { display: grid; grid-template-columns: 1fr 96px auto; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .alloc-row label { font-size: 12px; color: var(--paper-dim); }
+  .alloc-row .cur { font-size: 10.5px; color: var(--steel-600); display: block; }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+
+  /* log */
+  .log-entry { border-left: 3px solid var(--steel-700); padding: 10px 0 10px 14px; margin-bottom: 6px; font-size: 12.5px; line-height: 1.55; }
+  .log-entry.tier-decisive { border-left-color: var(--victory); }
+  .log-entry.tier-victory { border-left-color: #4f8a6f; }
+  .log-entry.tier-pyrrhic { border-left-color: var(--hazard); }
+  .log-entry.tier-setback { border-left-color: #a15a2a; }
+  .log-entry.tier-catastrophe { border-left-color: var(--blood); }
+  .log-entry.field { border-left-color: var(--signal); background: rgba(95,155,191,0.05); }
+  .log-head { display: flex; justify-content: space-between; font-family: 'Oswald', sans-serif; letter-spacing: 0.5px; color: var(--paper); font-size: 13px; margin-bottom: 4px; gap: 8px; flex-wrap: wrap; }
+  .log-head .meta { color: var(--paper-dim); font-family: 'IBM Plex Mono', monospace; font-size: 11px; }
+  .log-tier { font-weight: 600; white-space: nowrap; }
+  .tier-decisive .log-tier { color: var(--victory); }
+  .tier-victory .log-tier { color: #7fbf9a; }
+  .tier-pyrrhic .log-tier { color: var(--hazard); }
+  .tier-setback .log-tier { color: #d38a4f; }
+  .tier-catastrophe .log-tier { color: var(--blood); }
+  .field .log-tier { color: var(--signal); }
+  .log-op { font-family: 'Oswald', sans-serif; font-size: 12px; letter-spacing: 1.5px; color: var(--hazard); margin-bottom: 3px; }
+  .field .log-op { color: var(--signal); }
+  .log-body { color: var(--paper-dim); }
+  .log-deltas { margin-top: 6px; font-size: 11.5px; color: var(--steel-600); line-height: 1.6; }
+  .log-empty { color: var(--paper-dim); font-size: 13px; font-style: italic; padding: 6px 0; }
+
+  details.full-report { margin-top: 8px; }
+  details.full-report summary { cursor: pointer; font-size: 11.5px; color: var(--hazard); list-style: none; }
+  details.full-report summary::-webkit-details-marker { display: none; }
+  details.full-report summary::before { content: "▸ "; }
+  details.full-report[open] summary::before { content: "▾ "; }
+  .report-grid { margin-top: 8px; padding: 10px 12px; background: rgba(0,0,0,0.25); border: 1px solid var(--steel-700); font-size: 11.5px; color: var(--paper-dim); line-height: 1.75; }
+  .report-grid .rline b { color: var(--paper); font-weight: 600; }
+  .report-grid .rsep { border-top: 1px dashed var(--steel-700); margin: 7px 0; }
+
+  /* live status board */
+  .act-code { font-family: 'Oswald', sans-serif; font-size: 16px; letter-spacing: 1.5px; color: var(--hazard); }
+  .act-meta { font-size: 11px; color: var(--steel-600); letter-spacing: 0.5px; margin-top: 3px; }
+  .act-bar-row { display: flex; align-items: center; gap: 10px; margin: 12px 0 6px; }
+  .act-bar { flex: 1; height: 12px; }
+  .act-pct { font-family: 'Oswald', sans-serif; font-size: 15px; color: var(--hazard); min-width: 44px; text-align: right; }
+  .act-clock { font-size: 12px; color: var(--paper-dim); letter-spacing: 0.5px; }
+  .act-clock b { font-family: 'IBM Plex Mono', monospace; color: var(--paper); }
+  .act-note { font-size: 12px; color: var(--paper-dim); line-height: 1.6; margin-top: 10px; }
+  .act-note.dim { color: var(--steel-600); font-style: italic; }
+  .act-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 6px 14px; margin-top: 12px; }
+  .act-metrics div { display: flex; justify-content: space-between; gap: 8px; font-size: 11.5px; color: var(--paper-dim); border-bottom: 1px dashed var(--steel-700); padding: 3px 0; }
+  .act-metrics b { color: var(--paper); font-family: 'Oswald', sans-serif; letter-spacing: 0.5px; }
+  .act-steps { margin-top: 12px; }
+  .act-step { font-size: 11.5px; line-height: 1.6; padding: 3px 0 3px 16px; position: relative; color: var(--steel-600); }
+  .act-step::before { content: "✓"; position: absolute; left: 0; color: var(--victory); }
+  .act-step.current { color: var(--paper); }
+  .act-step.current::before { content: "▸"; color: var(--hazard); }
+
+  /* specifications */
+  .spec-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+  .spec-block { border: 1px solid var(--steel-700); background: rgba(0,0,0,0.22); padding: 11px 13px; }
+  .spec-block h5 { margin: 0 0 7px; font-family: 'Oswald', sans-serif; font-size: 11.5px; letter-spacing: 1.5px; color: var(--hazard); text-transform: uppercase; font-weight: 500; }
+  .spec-block ul { margin: 0; padding-left: 16px; }
+  .spec-block li { font-size: 11.5px; color: var(--paper-dim); line-height: 1.65; margin-bottom: 3px; }
+  .spec-block li b { color: var(--paper); }
+
+  .log-entry.tier-abandoned { border-left-color: #7a6a4a; }
+  .tier-abandoned .log-tier { color: #b39b6a; }
+  .log-delete { background: none; border: 1px solid var(--steel-700); color: var(--steel-600); font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 1px; padding: 2px 8px; cursor: pointer; margin-top: 8px; }
+  .log-delete:hover { color: var(--blood); border-color: var(--blood-dim); }
+
+  .footer-row { display: flex; justify-content: space-between; align-items: center; margin-top: 18px; font-size: 11px; color: var(--steel-600); letter-spacing: 0.5px; flex-wrap: wrap; gap: 10px; }
+  .reset-link { background: none; border: none; color: var(--steel-600); text-decoration: underline; cursor: pointer; font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 0; }
+  .reset-link:hover { color: var(--blood); }
+  .save-state { color: var(--steel-600); }
+
+  .toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--steel-800); border: 1px solid var(--hazard-dim); color: var(--paper);
+    padding: 10px 18px; font-size: 12.5px; opacity: 0; transition: opacity 0.3s ease, transform 0.3s ease;
+    pointer-events: none; max-width: 90%; text-align: center; z-index: 50;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (prefers-reduced-motion: reduce) { .bar-fill, button.deploy, .toast { transition: none; } }
+  @media (max-width: 560px) {
+    .field-grid { grid-template-columns: 1fr; }
+    .op-cols { grid-template-columns: 1fr; }
+    .header-inner { gap: 12px; }
+    .seal { width: 52px; height: 52px; }
+    .alloc-row { grid-template-columns: 1fr 86px; }
+    .alloc-row button { grid-column: 1 / -1; }
+  }
+</style>
+</head>
+<body>
+
+<div class="frame">
+
+  <div class="classbar" id="classBar">Classified — Super Earth High Command · Fleet Actual · Eyes Only</div>
+
+  <div class="header">
+    <div class="header-inner">
+      <img class="seal" src="data:image/webp;base64,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" alt="Task Force Omega insignia">
+      <div>
+        <div class="authority">Super Earth · Ministry of Defense · Fleet Command</div>
+        <div class="designation">Task Force Omega · Colossus-Class Dreadnought</div>
+        <h1 class="shipname">SES Titan of Liberty</h1>
+        <div class="subline" id="statusLine">Establishing link to fleet telemetry…</div>
+      </div>
+    </div>
+    <div class="chrono">
+      <span>Super Earth Standard Date <b id="chronoDate">—</b></span>
+      <span>Fleet Chronometer <b id="chronoTime">—</b></span>
+      <span>Station <b id="chronoStation">Deep Void</b></span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Fleet Readiness <span class="tag" id="readinessTag">—</span></div>
+    <div class="strip">
+      <div class="strip-cell"><div class="k">Ship condition</div><div class="v" id="statCondition">—</div></div>
+      <div class="strip-cell"><div class="k">Crew morale</div><div class="v" id="statMorale">—</div></div>
+      <div class="strip-cell"><div class="k">Complement</div><div class="v" id="statCrew">—</div></div>
+      <div class="strip-cell"><div class="k">Battle group</div><div class="v" id="statEscorts">—</div></div>
+      <div class="strip-cell"><div class="k">Operations run</div><div class="v" id="statOps">—</div></div>
+      <div class="strip-cell"><div class="k">Capital kills</div><div class="v" id="statCapKills">—</div></div>
+    </div>
+    <div id="warningBanner"></div>
+  </div>
+
+  <div class="panel" id="activityPanel" style="display:none;">
+    <div class="panel-title">Operations Status Board <span class="tag" id="activityTag">—</span></div>
+    <div id="activityBody"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Command Authentication <span class="tag" id="accessTag">LOCKED</span></div>
+    <div id="accessLockedView">
+      <p class="console-intro" style="margin-top:0; padding-top:0; border-top:none;">Fleet Readiness, the Operations Status Board, Ship Systems, Stores &amp; Logistics, the Vessel Registry and the Transmission Log are visible to all Task Force Omega personnel. Authorization is required only to change the Titan's disposition — the Operations Board, resupply and repair orders, Emergency Reserves, the Quartermaster Console and Field Report Intake.</p>
+      <div class="field-grid">
+        <div class="field full">
+          <label for="accessCode">6-digit access code</label>
+          <input type="password" id="accessCode" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="••••••" autocomplete="off">
+        </div>
+      </div>
+      <button class="secondary wide" id="accessSubmit">Authenticate</button>
+      <div class="cooldown-note" id="accessNote"></div>
+    </div>
+    <div id="accessUnlockedView" style="display:none;">
+      <p class="console-intro" style="margin-top:0; padding-top:0; border-top:none;">Fleet Actual authenticated on this device. Full command console unlocked.</p>
+      <button class="secondary" id="lockBtn">Lock controls again</button>
+    </div>
+  </div>
+
+  <div class="panel" id="opsPanel" style="display:none;">
+    <div class="panel-title">Operations Board <span class="tag">SEHC-DIR/7</span></div>
+
+    <div class="field-grid">
+      <div class="field full">
+        <label for="planetInput">Target world or void sector</label>
+        <input type="text" id="planetInput" list="planetList" placeholder="Type any world — e.g. Malevelon Creek, Cyberstan, Meridia" autocomplete="off">
+        <datalist id="planetList"></datalist>
+        <div class="hint">Free entry. Suggestions are Command's known registry, not a limit.</div>
+      </div>
+      <div class="field">
+        <label for="factionSelect">Hostile force</label>
+        <select id="factionSelect">
+          <option value="Terminids">Terminids</option>
+          <option value="Automatons">Automatons</option>
+          <option value="Illuminate">Illuminate</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="resistanceSelect">Projected resistance</label>
+        <select id="resistanceSelect">
+          <option value="low">Light</option>
+          <option value="medium" selected>Moderate</option>
+          <option value="high">Heavy</option>
+          <option value="extreme">Overwhelming</option>
+        </select>
+      </div>
+      <div class="field full">
+        <label for="durationRange">Operation length</label>
+        <div class="duration-row">
+          <input type="range" id="durationRange" min="1" max="14" value="4" step="1">
+          <span class="duration-days" id="durationDays">4 days</span>
+        </div>
+      </div>
+    </div>
+
+    <button class="deploy" id="requestBtn">Request Available Operations</button>
+    <div class="cooldown-note" id="cooldownNote"></div>
+
+    <div class="ops-list" id="opsList"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Ship Systems <span class="tag">Damage Control</span></div>
+    <div class="ship-diagram-wrap">
+      <svg class="ship-svg" viewBox="0 0 220 424" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path id="svgHull" d="
+          M110,8 L118,8 L118,32 L150,55 L158,95 L146,130 L146,330 L176,350 L192,380 L150,396 L122,420 L110,424
+          L98,420 L70,396 L28,380 L44,350 L74,330 L74,130 L62,95 L70,55 L102,32 L102,8 Z
+        " stroke="#384049" stroke-width="3" stroke-linejoin="miter"/>
+        <rect id="svgBatteryL" x="88" y="40" width="10" height="75" stroke="#14181c" stroke-width="2"/>
+        <rect id="svgBatteryR" x="122" y="40" width="10" height="75" stroke="#14181c" stroke-width="2"/>
+        <g id="svgTubes">
+          <rect x="82" y="140" width="9" height="26" stroke="#14181c" stroke-width="1.5"/>
+          <rect x="95" y="140" width="9" height="26" stroke="#14181c" stroke-width="1.5"/>
+          <rect x="108" y="140" width="9" height="26" stroke="#14181c" stroke-width="1.5"/>
+          <rect x="121" y="140" width="9" height="26" stroke="#14181c" stroke-width="1.5"/>
+          <rect x="134" y="140" width="9" height="26" stroke="#14181c" stroke-width="1.5"/>
+        </g>
+        <rect id="svgHangarL" x="26" y="350" width="46" height="44" stroke="#14181c" stroke-width="2"/>
+        <rect id="svgHangarR" x="148" y="350" width="46" height="44" stroke="#14181c" stroke-width="2"/>
+        <g id="svgMedbay">
+          <rect x="101" y="285" width="18" height="45" stroke="#14181c" stroke-width="1.5"/>
+          <rect x="89" y="300" width="42" height="16" stroke="#14181c" stroke-width="1.5"/>
+        </g>
+        <circle id="svgReactor" cx="110" cy="232" r="34" stroke="#14181c" stroke-width="2"/>
+        <g id="svgPointDef">
+          <circle cx="66" cy="98" r="6" stroke="#14181c" stroke-width="1.5"/>
+          <circle cx="154" cy="98" r="6" stroke="#14181c" stroke-width="1.5"/>
+          <circle cx="40" cy="375" r="6" stroke="#14181c" stroke-width="1.5"/>
+          <circle cx="180" cy="375" r="6" stroke="#14181c" stroke-width="1.5"/>
+        </g>
+        <rect id="svgEngineL" x="32" y="390" width="30" height="20" stroke="#14181c" stroke-width="2"/>
+        <rect id="svgEngineC" x="95" y="405" width="30" height="16" stroke="#14181c" stroke-width="2"/>
+        <rect id="svgEngineR" x="158" y="390" width="30" height="20" stroke="#14181c" stroke-width="2"/>
+      </svg>
+      <div class="parts-list" id="partsList"></div>
+    </div>
+    <div id="repairControls" style="display:none;">
+      <div class="btn-row">
+        <button class="secondary" id="repairMinorBtn">Minor Repairs · 12h</button>
+        <button class="secondary" id="repairFullBtn">Full Repairs · 24h</button>
+      </div>
+      <div class="cooldown-note" id="repairNote"></div>
+    </div>
+    <div class="cooldown-note" id="repairLockedNote">Repair authority requires Fleet Actual authentication above.</div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Stores &amp; Logistics <span class="tag" id="storesTag">—</span></div>
+    <div id="storesList"></div>
+  </div>
+
+  <div class="panel" id="resupplyPanel" style="display:none;">
+    <div class="panel-title">Requisition &amp; Resupply <span class="tag">Fleet Logistics</span></div>
+    <div class="btn-row">
+      <button class="secondary" id="resupplyMinorBtn">Minor Resupply · 1 week</button>
+      <button class="secondary" id="resupplyMajorBtn">Major Resupply · 3 weeks</button>
+    </div>
+    <div class="cooldown-note" id="resupplyNote"></div>
+  </div>
+
+  <details class="console" id="emergencyConsole" style="display:none;">
+    <summary>Emergency Reserves — Command Override</summary>
+    <div class="console-body">
+      <p class="console-intro">Breaking the seals on the emergency reserve holds. Instant, total, and logged permanently against the Titan's record. Fleet Logistics would prefer you scheduled a proper resupply.</p>
+      <div class="strip" style="margin-bottom:14px;">
+        <div class="strip-cell"><div class="k">Store seals broken</div><div class="v" id="emgStores">0</div></div>
+        <div class="strip-cell"><div class="k">Emergency refits</div><div class="v" id="emgRefit">0</div></div>
+      </div>
+      <div class="btn-row">
+        <button class="secondary" id="topOffBtn">Top Off All Stores</button>
+        <button class="secondary" id="fullRefitBtn">Full Drydock Refit</button>
+      </div>
+    </div>
+  </details>
+
+  <details class="console" id="qmConsole" style="display:none;">
+    <summary>Quartermaster Console — Manual Allocation</summary>
+    <div class="console-body">
+      <p class="console-intro">Quartermaster authority. Enter a quantity and add it to stores, or draw it down. Use this after your clan runs real operations — resupply the Titan to match what Task Force Omega actually earned in the field.</p>
+      <div id="allocRows"></div>
+      <div class="alloc-row">
+        <label for="allocMorale">Crew morale <span class="cur" id="curMorale">—</span></label>
+        <input type="number" id="allocMorale" placeholder="0" step="1">
+        <button class="secondary" data-alloc="morale">Apply</button>
+      </div>
+      <div class="alloc-row">
+        <label for="allocCrew">Crew complement <span class="cur" id="curCrew">—</span></label>
+        <input type="number" id="allocCrew" placeholder="0" step="100">
+        <button class="secondary" data-alloc="crew">Apply</button>
+      </div>
+      <div class="alloc-row">
+        <label for="allocEscorts">Escort vessels <span class="cur" id="curEscorts">—</span></label>
+        <input type="number" id="allocEscorts" placeholder="0" step="1">
+        <button class="secondary" data-alloc="escorts">Apply</button>
+      </div>
+      <div class="cooldown-note">Instant store and refit overrides now live in the Emergency Reserves console above.</div>
+    </div>
+  </details>
+
+  <details class="console" id="fieldConsole" style="display:none;">
+    <summary>Field Report Intake — Helldiver Actuals</summary>
+    <div class="console-body">
+      <p class="console-intro">File a verified report from a real Task Force Omega operation. Entries logged here are marked as field-confirmed and sit alongside the Titan's simulated engagements.</p>
+      <div class="field-grid">
+        <div class="field full">
+          <label for="frOp">Operation name</label>
+          <input type="text" id="frOp" placeholder="Operation Iron Verdict" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="frPlanet">World</label>
+          <input type="text" id="frPlanet" list="planetList" placeholder="Draupnir" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="frFaction">Hostile force</label>
+          <select id="frFaction">
+            <option value="Terminids">Terminids</option>
+            <option value="Automatons">Automatons</option>
+            <option value="Illuminate">Illuminate</option>
+            <option value="Mixed">Mixed / Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="frOutcome">Outcome</label>
+          <select id="frOutcome">
+            <option value="decisive">Decisive Victory</option>
+            <option value="victory" selected>Victory</option>
+            <option value="pyrrhic">Pyrrhic Victory</option>
+            <option value="setback">Setback</option>
+            <option value="catastrophe">Catastrophic Loss</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="frDivers">Helldivers deployed</label>
+          <input type="number" id="frDivers" placeholder="4" min="0">
+        </div>
+        <div class="field">
+          <label for="frKia">Confirmed KIA</label>
+          <input type="number" id="frKia" placeholder="0" min="0">
+        </div>
+        <div class="field">
+          <label for="frKills">Enemy losses</label>
+          <input type="number" id="frKills" placeholder="0" min="0">
+        </div>
+        <div class="field full">
+          <label for="frNotes">After-action notes</label>
+          <textarea id="frNotes" placeholder="Extraction contested. Two Bile Titans downed by orbital support from the Titan's forward batteries."></textarea>
+        </div>
+      </div>
+      <button class="secondary wide" id="frSubmit">File Report to Command</button>
+    </div>
+  </details>
+
+  <details class="console" id="specsConsole">
+    <summary>Vessel Registry — Colossus-Class Specifications</summary>
+    <div class="console-body">
+      <p class="console-intro">SEHC Naval Registry extract. Colossus-Class Dreadnought — 1 ship in service. Absolute doctrine-breaker. Originally greenlit as a deep-space shipyard, the Colossus Project was reclassified as a warship after Joint Naval Command realized nothing in the galaxy could actually stop it. Functions less as a single vessel and more as a mobile fortress-world — entire fleets dock inside its hangar spine for resupply mid-campaign.</p>
+      <div class="spec-grid">
+        <div class="spec-block">
+          <h5>Dimensions</h5>
+          <ul>
+            <li>Length: 24,000 m</li>
+            <li>Beam: 6,800 m</li>
+            <li>Height: 3,200 m</li>
+            <li>Mass: 48.4 billion metric tons</li>
+          </ul>
+        </div>
+        <div class="spec-block">
+          <h5>Armament</h5>
+          <ul>
+            <li>6x "Judgment" 2,400mm Spinal-Mounted Coilguns (bow-integrated, fires along the ship's main axis)</li>
+            <li>48x 380mm Autoloading Coilguns</li>
+            <li>220x 120mm Twin Turrets</li>
+            <li>400x 50mm Autocannons</li>
+            <li>180x "Rampart" Point-Defense Laser Cannons</li>
+            <li>4x "Requiem" Orbital Bombardment Lances (atmosphere-penetrating, planetary siege-rated)</li>
+            <li>1x "Sovereign" Directed Energy Superweapon (single-fire capacitor, strategic-level asset)</li>
+          </ul>
+        </div>
+        <div class="spec-block">
+          <h5>Carrier Complement</h5>
+          <ul>
+            <li>400x Eagle Strike Fighters</li>
+            <li>96x ASFX-42 "Peregrine" Aerospace Superiority Fighters</li>
+            <li>120x Pelican Dropships</li>
+            <li>40x Pelican Cargo Transports</li>
+            <li>300x TD-220 "Bastion" Tank Destroyers</li>
+            <li>150x Fast Recon Vehicles</li>
+            <li>500x Exo-Suits</li>
+            <li>3x Escort Frigate Squadrons (embedded)</li>
+          </ul>
+        </div>
+        <div class="spec-block">
+          <h5>Special Systems</h5>
+          <ul>
+            <li><b>Selective Cloaking Array:</b> can render the entire hull — or isolated sections down to individual weapon batteries — invisible to sensors and optical detection. Full-ship cloak draws immense power and is rarely sustained for more than a few minutes at a time, making it a tactical gut-punch rather than a permanent stealth mode.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <div class="panel" id="logPanel">
+    <div class="panel-title">Transmission Log <span class="tag" id="logTag">—</span></div>
+    <div id="logContainer">
+      <div class="log-empty">No operations on record. Request orders from the board above to begin the campaign.</div>
+    </div>
+  </div>
+
+  <div class="footer-row" id="footerRow" style="display:none;">
+    <span class="save-state" id="saveState">Fleet record synchronized.</span>
+    <span>
+      <button class="reset-link" id="exportBtn">archive record</button> ·
+      <button class="reset-link" id="importBtn">restore archive</button> ·
+      <button class="reset-link" id="resetBtn">scuttle record</button>
+    </span>
+  </div>
+  <input type="file" id="importFile" accept="application/json" style="display:none">
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  const STORAGE_KEY = 'ses-titan-of-liberty-v3';
+
+  // ============================================================================
+  // FLEET RECORD DATABASE — REQUIRED SETUP BEFORE HOSTING
+  // ============================================================================
+  // This app stores the ship's record in a free Firebase Realtime Database so
+  // everyone who opens the page sees the same Titan of Liberty. Takes about
+  // five minutes, no coding, no credit card:
+  //
+  //   1. Go to https://console.firebase.google.com and create a project
+  //      (the free "Spark" plan is plenty — no billing info required).
+  //   2. In the left sidebar: Build > Realtime Database > Create Database.
+  //      Pick any region. When asked about rules, choose "start in test mode"
+  //      for now — you'll lock it down properly in step 4.
+  //   3. Copy the database URL shown at the top of that page. It looks like
+  //      https://YOUR-PROJECT-default-rtdb.firebaseio.com
+  //      or   https://YOUR-PROJECT-default-rtdb.REGION.firebasedatabase.app
+  //   4. Paste that URL below, replacing the placeholder.
+  //   5. In the Realtime Database "Rules" tab, replace the rules with:
+  //           {
+  //             "rules": {
+  //               "ses-titan-of-liberty-v3": {
+  //                 ".read": true,
+  //                 ".write": true
+  //               }
+  //             }
+  //           }
+  //      This scopes public read/write to only this app's one record —
+  //      nothing else in your Firebase project is exposed.
+  //
+  // Until you fill this in, the app quietly falls back to this browser only
+  // (nothing shared), so nobody sees a broken page while you're setting up.
+  const FIREBASE_DB_URL = 'https://titan-of-liberty-default-rtdb.firebaseio.com';
+
+  function dbConfigured() {
+    return !!FIREBASE_DB_URL && !FIREBASE_DB_URL.includes('YOUR-PROJECT');
+  }
+  function dbUrl() {
+    return FIREBASE_DB_URL.replace(/\/$/, '') + '/' + STORAGE_KEY + '.json';
+  }
+
+  // Command authentication — this is intentionally device-local only (localStorage),
+  // never written into the shared fleet record, so unlocking on one device never
+  // unlocks it for the rest of the clan.
+  const ACCESS_CODE_HASH = '98c5bc7a7f3746ba0979e23cb0cb803826e64da9bd208ca9001deb6898ee640b';
+  const SCUTTLE_CODE_HASH = '5fb1f2daaedc5908a1f56b27332f693b0fa7431c35d640bd34ab5f0576db45d7';
+  let unlocked = false;
+
+  async function sha256Hex(str) {
+    const buf = new TextEncoder().encode(str);
+    const digest = await crypto.subtle.digest('SHA-256', buf);
+    return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+  const UNLOCK_KEY = 'ses-titan-of-liberty-unlocked';
+
+  /* ---------------------------------------------------------------
+     PERSISTENCE — a shared Firebase record everyone reads and writes,
+     with a per-browser localStorage copy kept as an offline fallback.
+  --------------------------------------------------------------- */
+  const Store = {
+    async load() {
+      if (dbConfigured()) {
+        try {
+          const res = await fetch(dbUrl(), { cache: 'no-store' });
+          if (res.ok) {
+            const text = await res.text();
+            if (text !== 'null') return text; // valid JSON payload from the shared record
+          }
+        } catch (e) { /* offline, misconfigured, or blocked — fall through to local copy */ }
+      }
+      try {
+        const v = window.localStorage.getItem(STORAGE_KEY);
+        if (v) return v;
+      } catch (e) { /* storage blocked */ }
+      return null;
+    },
+    async save(str) {
+      let ok = false;
+      if (dbConfigured()) {
+        try {
+          const res = await fetch(dbUrl(), {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: str
+          });
+          ok = res.ok;
+        } catch (e) { ok = false; }
+      }
+      try { window.localStorage.setItem(STORAGE_KEY, str); } catch (e) {}
+      return ok;
+    },
+    saveSync(str) {
+      try { window.localStorage.setItem(STORAGE_KEY, str); } catch (e) {}
+    }
+  };
+
+  /* ---------------------------------------------------------------
+     REFERENCE DATA
+  --------------------------------------------------------------- */
+  // Full known registry, grouped by sector. Sectors are listed alphabetically in the
+  // suggestion box; planets stay grouped with their own sector. Free typing is always
+  // permitted, so anything not on this list can still be targeted.
+  const SECTORS = [
+    { sector: 'Akira Sector', planets: ['Alaraph','Alathfar XI','Andar','Asperoth Prime','Keid'] },
+    { sector: 'Alstrad Sector', planets: ['Kneth Port','Klaka 5','Kraz'] },
+    { sector: 'Altus Sector', planets: ['Pathfinder V','Klen Dahth II',"Widow's Harbor",'New Haven','Pilen V'] },
+    { sector: 'Andromeda Sector', planets: ['Charbal-VII','Charon Prime','Martale','Marfark','Matar Bay'] },
+    { sector: 'Arturion Sector', planets: ['Mortax Prime','Kirrik','Wilford Station','Arkturus','Pioneer II','Electra Bay','Deneb Secundus'] },
+    { sector: 'Barnard Sector', planets: ['Fornskogur II','Veil','Marre IV','Midasburg','Darrowsport','Hydrofall Prime'] },
+    { sector: 'Borgus Sector', planets: ['Ursica XI','Achird III','Achernar Secundus','Darius II'] },
+    { sector: 'Cancri Sector', planets: ['Prosperity Falls','Cerberus IIIc','Effluvia','Seyshel Beach','Fort Sanctuary'] },
+    { sector: 'Cantolus Sector', planets: ['Kelvinor',"Martyr's Bay",'Freedom Peak','Viridia Prime','Obari'] },
+    { sector: 'Celeste Sector', planets: ['Sulfura','Nublaria I','Krakatwo','Ivis','Slif','Moradesh'] },
+    { sector: 'Draco Sector', planets: ['Crimsica','Estanu','Fori Prime'] },
+    { sector: 'Falstaff Sector', planets: ['Bore Rock','Esker','Socorro III','Erson Sands'] },
+    { sector: 'Farsight Sector', planets: ['Prasa','Pollux 31','Polaris Prime','Pherkad Secundus','Grand Errant'] },
+    { sector: 'Ferris Sector', planets: ['Hadar','Haldus','Zea Rugosia','Herthon Secundus'] },
+    { sector: 'Gallux Sector', planets: ['Kharst','Bashyr','Rasp','Acubens Prime','Adhara','Afoyay Bay'] },
+    { sector: 'Gellert Sector', planets: ['Minchir','Mintoria','Blistica','Zzaniah Prime','Zosma'] },
+    { sector: 'Gothmar Sector', planets: ['Okul VI','Solghast','Diluvia'] },
+    { sector: 'Guang Sector', planets: ['Elysian Meadows','Alderidge Cove','Bellatrix','Botein','Khandark'] },
+    { sector: 'Hanzo Sector', planets: ['Heze Bay','Alairt III','Alamak VII','New Stockholm','Ain-5'] },
+    { sector: 'Hawking Sector', planets: ['Mordia 9','Euphoria III','Skitter','Kuma'] },
+    { sector: 'Hydra Sector', planets: ['Aesir Pass','Vernen Wells','Menkent'] },
+    { sector: 'Idun Sector', planets: ['Wraith','Atrama','Myradesh','Maw'] },
+    { sector: 'Iptus Sector', planets: ['Providence','Primordia','Krakabos','Iridica','Valgaard','Ratch'] },
+    { sector: 'Jin Xi Sector', planets: ['Acamar IV','Pandion-XXIV','Gacrux','Phact Bay','Gar Haren','Gatria'] },
+    { sector: 'Kelvin Sector', planets: ['Zegema Paradise','Fort Justice','New Kiruna','Igla','Emeria'] },
+    { sector: 'Korpus Sector', planets: ['Crucible','Volterra','Caramoor','Alta V','Inari'] },
+    { sector: "L'estrade Sector", planets: ['Navi VII','Omicron','Nabatea Secundus','Gemstone Bluffs','Epsilon Phoencis VI','Enuliale','Disapora X'] },
+    { sector: 'Lacaille Sector', planets: ['Lesath','Penta','Chort Bay','Choohe'] },
+    { sector: 'Leo Sector', planets: ['Ras Algethi','Propus','Halies Port','Haka'] },
+    { sector: 'Marspira Sector', planets: ['Curia','Barabos','Fenmire','Tarsh','Mastia'] },
+    { sector: 'Meridian Sector', planets: ['Emorath','Ilduna Prime','Baldrick Prime','Liberty Ridge'] },
+    { sector: 'Mirin Sector', planets: ['Hellmire','Nivel 43','Zagon Prime','Oshaune'] },
+    { sector: 'Morgon Sector', planets: ['Myrium','Eukoria','Regnus','Mog'] },
+    { sector: 'Nanos Sector', planets: ['Dolph','Julheim','Bekvam III','Duma Tyr'] },
+    { sector: 'Omega Sector', planets: ['Setia','Senge 23','Seasse','Hydrobius','Karlia'] },
+    { sector: 'Orion Sector', planets: ['Terrek','Azterra','Fort Union','Cirrus','Heeth',"Angel's Venture",'Veld'] },
+    { sector: 'Quintus Sector', planets: ['Termadon','Stor Tha Prime','Spherion','Stout','Leng Secundus'] },
+    { sector: 'Rictus Sector', planets: ['Valmox','Iro','Grafmere','Kerth Secundus','Parsh','Oasis','Genesis Prime'] },
+    { sector: 'Rigel Sector', planets: ['Rogue 5','RD-4','Hesoe Prime','Hort','Rirga Bay'] },
+    { sector: 'Sagan Sector', planets: ['Oslo Station','Gunvald','Borea'] },
+    { sector: 'Saleria Sector', planets: ['Calypso','Outpost 32','Reaf','Irulta'] },
+    { sector: 'Severin Sector', planets: ['Maia','Malevelon Creek','Durgen','Ubanea','Tibit'] },
+    { sector: 'Sol System', planets: ['Super Earth','Mars'] },
+    { sector: 'Sten Sector', planets: ['Trandor','Peacock','Partion','Overgoe Prime','Azur Secundus'] },
+    { sector: 'Talus Sector', planets: ['Shallus','Shelt','Gaellivare','Imber'] },
+    { sector: 'Tanis Sector', planets: ['Claorell','Vog-Sojoth','Clasa','Yed Prior','Zefia','Demiurg'] },
+    { sector: 'Tarragon Sector', planets: ['East Iridium Trading Bay','Brink-2','Osupsam','Canopus','Bunda Secundus'] },
+    { sector: 'Theseus Sector', planets: ['The Weir','Kuper','Caph','Castor','Tien Kwan','Lastofe'] },
+    { sector: 'Trigon Sector', planets: ['Varylia 5','Choepessa IV','Ustotu','Troost','Vandalon IV'] },
+    { sector: 'Umlaut Sector', planets: ['Erata Prime','Fenrir III','Meridia','Turing'] },
+    { sector: 'Ursa Sector', planets: ['Skaash','Acrab XI','Acrux IX','Gemma'] },
+    { sector: 'Valdis Sector', planets: ['Merga IV','Merak','Cyberstan','Aurora Bay','Mekbuda','Videmitarix Prime'] },
+    { sector: 'Xi Tauri Sector', planets: ['Skat Bay','Sirius','Siemnot','Shete'] },
+    { sector: 'Xzar Sector', planets: ['Mort','Pöpli IX','Ingmar','Mantes','Draupnir'] },
+    { sector: 'Ymir Sector', planets: ['Meissa','Wasat','X-45','Vega Bay','Wezen'] }
+  ];
+
+  const FACTION = {
+    Terminids: {
+      unit: 'brood', big: 'Bile Titan', trooper: 'Warrior', adj: 'chitinous',
+      vessel: 'hive-asteroid', vesselPl: 'hive-asteroids', capital: 'Progenitor Hive-Mass',
+      orbital: 'spore clouds and drifting chitin reefs'
+    },
+    Automatons: {
+      unit: 'garrison', big: 'Factory Strider', trooper: 'Trooper', adj: 'mechanized',
+      vessel: 'gunship carrier', vesselPl: 'gunship carriers', capital: 'Automaton Dreadnought',
+      orbital: 'a picket line of automated killboxes'
+    },
+    Illuminate: {
+      unit: 'host', big: 'Overseer', trooper: 'Voteless', adj: 'psionic',
+      vessel: 'warpship', vesselPl: 'warpships', capital: 'Illuminate Monolith',
+      orbital: 'a lattice of tesseract distortions'
+    },
+    Mixed: {
+      unit: 'force', big: 'heavy unit', trooper: 'infantry', adj: 'hostile',
+      vessel: 'hostile vessel', vesselPl: 'hostile vessels', capital: 'enemy flagship',
+      orbital: 'mixed hostile contacts'
+    }
+  };
+
+  const RESISTANCE = {
+    low:     { scoreBonus: 14,  magnitude: 0.7, label: 'Light' },
+    medium:  { scoreBonus: 0,   magnitude: 1.0, label: 'Moderate' },
+    high:    { scoreBonus: -13, magnitude: 1.45, label: 'Heavy' },
+    extreme: { scoreBonus: -24, magnitude: 1.9, label: 'Overwhelming' }
+  };
+
+  const PART_KEYS = ['hull','battery','pointdef','tubes','hangar','engines','reactor','medbay'];
+  const PART_LABELS = {
+    hull: 'Hull Plating',
+    battery: 'Macro-Cannon Batteries',
+    pointdef: 'Point-Defense Grid',
+    tubes: 'Hellpod Launch Tubes',
+    hangar: 'Hangar Decks',
+    engines: 'Sublight Drives',
+    reactor: 'Reactor Core',
+    medbay: 'Medical Decks'
+  };
+
+  const RES_KEYS = ['req','mun','fuel','sup','smp'];
+  const RES = {
+    req:  { label: 'Requisition Slips', unit: 'R',   cap: 500000, color: '#5f9bbf', desc: 'Command scrip. Buys repairs, refits and Ministry goodwill.' },
+    mun:  { label: 'Munitions',         unit: 'plt', cap: 12000,  color: '#c99a4a', desc: 'Macro-cannon shells, Eagle ordnance, small arms pallets.' },
+    fuel: { label: 'E-710 Fuel',        unit: 'kt',  cap: 6000,   color: '#8a6d1f', desc: 'Refined bug oil. Burns for translation, station-keeping and maneuver.' },
+    sup:  { label: 'Rations & Medical', unit: 'crt', cap: 9000,   color: '#6fae4a', desc: 'Feeds a quarter-million crew and keeps the medical decks running.' },
+    smp:  { label: 'Samples',           unit: 'cr',  cap: 2500,   color: '#9d7fbf', desc: 'Recovered materiel. Traded to Command for major refits.' }
+  };
+
+  const TIERS = [
+    { key: 'decisive', label: 'Decisive Victory', min: 86, dmg: -3,  morale: 10, killRatio: 0.94, rewardMult: 1.6, casualty: 0.04,
+      lines: [
+        'The Titan crossed the terminator line firing and did not stop. Enemy orbital presence ceased to exist inside forty minutes.',
+        'Macro-cannon salvos broke the formation on the first pass. Task Force Omega owns this orbit outright.',
+        'Total orbital supremacy. High Command drafted the commendation before the guns had finished cooling.'
+      ] },
+    { key: 'victory', label: 'Victory', min: 64, dmg: -8, morale: 6, killRatio: 0.74, rewardMult: 1.15, casualty: 0.11,
+      lines: [
+        'Orbit secured after a running engagement across the far side of the planet. Scorched plating, but the flag flies.',
+        'The enemy contested every kilometer of the approach and lost. Hangar decks are recovering the last Eagle wings now.',
+        'Objective achieved. Damage control is working three decks, but the Titan holds station.'
+      ] },
+    { key: 'pyrrhic', label: 'Pyrrhic Victory', min: 39, dmg: -17, morale: -3, killRatio: 0.48, rewardMult: 0.6, casualty: 0.29,
+      lines: [
+        'The orbit is ours. So is the debris field, and a good portion of it used to be ours too.',
+        'Won. The casualty manifest runs longer than the after-action report.',
+        'Victory, technically. Medical decks are at capacity and the quartermaster has stopped answering the comm.'
+      ] },
+    { key: 'setback', label: 'Setback', min: 19, dmg: -24, morale: -11, killRatio: 0.24, rewardMult: 0.25, casualty: 0.54,
+      lines: [
+        'Enemy reinforcements translated in behind the battle group. The Titan disengaged under sustained fire.',
+        'The assault stalled in low orbit. Withdrawal was ordered before the hull could be opened any further.',
+        'A costly miscalculation. Command has requested the briefing officer report in person.'
+      ] },
+    { key: 'catastrophe', label: 'Catastrophic Loss', min: 0, dmg: -33, morale: -19, killRatio: 0.09, rewardMult: 0.05, casualty: 0.74,
+      lines: [
+        'The Titan limps out of the gravity well venting atmosphere from nine decks.',
+        'Total operational failure. A third of the battle group did not translate out with us.',
+        'Catastrophe by every measure. The Ministry of Truth has already classified the gun-camera footage.'
+      ] }
+  ];
+
+  // cost/reward figures are PER MISSION-DAY, scaled by resistance magnitude
+  const OP_TYPES = [
+    { key: 'blockade', name: 'Orbital Blockade', risk: 'moderate', scoreMod: 6, damage: 0.8, scale: 0.7, gain: false,
+      systems: ['hull','pointdef','engines'],
+      cost: { fuel: 95, mun: 110, sup: 70 },
+      reward: { req: 5200, smp: 6 },
+      desc: (c, f) => `Hold a total exclusion zone above ${c.planet}. Nothing lands, nothing lifts. The Titan sits in the gravity well and dares ${f.orbital} to test the point-defense grid.` },
+
+    { key: 'fleet', name: 'Fleet Engagement', risk: 'high', scoreMod: -6, damage: 1.35, scale: 1.0, gain: false,
+      systems: ['hull','battery','pointdef','hangar'],
+      cost: { fuel: 130, mun: 260, sup: 60 },
+      reward: { req: 9400, mun: 60, smp: 14 },
+      desc: (c, f) => `Break the hostile flotilla massing above ${c.planet} in open void. Broadside range, no cover, ${f.vesselPl} on every bearing.` },
+
+    { key: 'bombard', name: 'Sustained Orbital Bombardment', risk: 'low', scoreMod: 11, damage: 0.5, scale: 0.6, gain: false,
+      systems: ['battery','reactor'],
+      cost: { fuel: 60, mun: 340, sup: 40 },
+      reward: { req: 4600, smp: 4 },
+      desc: (c, f) => `Flatten the ${f.unit} entrenchments on ${c.planet} from high orbit. Fire missions run around the clock until the gun crews rotate out deaf.` },
+
+    { key: 'invasion', name: 'Full Planetary Invasion', risk: 'high', scoreMod: -4, damage: 1.15, scale: 1.4, gain: false,
+      systems: ['tubes','hangar','medbay','hull'],
+      cost: { fuel: 120, mun: 230, sup: 210 },
+      reward: { req: 11000, smp: 22 },
+      desc: (c, f) => `Every launch tube open, every hangar deck cycling. Put the full Helldiver contingent on the surface of ${c.planet} and take it from the ${f.unit} one grid square at a time.` },
+
+    { key: 'salvage', name: 'Salvage & Requisition Sweep', risk: 'low', scoreMod: 9, damage: 0.55, scale: 0.5, gain: true,
+      systems: ['hull','hangar'],
+      cost: { fuel: 70, mun: 50, sup: 45 },
+      reward: { req: 3800, mun: 210, smp: 34 },
+      desc: (c, f) => `Comb the wreck fields over ${c.planet} for anything Command can bill. Cutting crews, salvage tenders, and a lot of very careful work around unexploded ordnance.` },
+
+    { key: 'refinery', name: 'E-710 Extraction Operation', risk: 'moderate', scoreMod: 2, damage: 0.85, scale: 0.9, gain: true,
+      systems: ['tubes','hangar','hull'],
+      cost: { fuel: 55, mun: 140, sup: 90 },
+      reward: { req: 2600, fuel: 280, smp: 10 },
+      desc: (c, f) => `Seize and hold the extraction sites on ${c.planet}, then pump until the tanks are full. Fuel is freedom, and freedom is running low.` },
+
+    { key: 'convoy', name: 'Convoy Escort & Line Security', risk: 'low', scoreMod: 12, damage: 0.45, scale: 0.5, gain: true,
+      systems: ['pointdef','engines'],
+      cost: { fuel: 85, mun: 70, sup: 30 },
+      reward: { req: 3100, sup: 260, mun: 90 },
+      desc: (c, f) => `Shepherd the supply train through the ${c.planet} approach lanes. Slow, dull, and the fastest way to fill the Titan's holds.` },
+
+    { key: 'evac', name: 'Civilian Evacuation', risk: 'moderate', scoreMod: 3, damage: 0.75, scale: 0.8, gain: false,
+      systems: ['hangar','medbay','hull'],
+      cost: { fuel: 100, mun: 90, sup: 240 },
+      reward: { req: 4200, smp: 8 },
+      desc: (c, f) => `Lift the colonists off ${c.planet} before the ${f.unit} reaches the settlements. Hangar decks become shelters. Medical decks become everything.` },
+
+    { key: 'relief', name: 'Siege Relief Operation', risk: 'high', scoreMod: -8, damage: 1.25, scale: 1.2, gain: false,
+      systems: ['hull','battery','tubes','engines'],
+      cost: { fuel: 145, mun: 250, sup: 150 },
+      reward: { req: 10200, sup: 90, smp: 18 },
+      desc: (c, f) => `Punch through the cordon and relieve the garrison holding out on ${c.planet}. They have been broadcasting on the emergency band for six days.` },
+
+    { key: 'recon', name: 'Deep-Void Reconnaissance in Force', risk: 'moderate', scoreMod: 0, damage: 0.9, scale: 0.6, gain: true,
+      systems: ['engines','reactor','pointdef'],
+      cost: { fuel: 160, mun: 80, sup: 60 },
+      reward: { req: 2900, smp: 46 },
+      desc: (c, f) => `Run silent past ${c.planet} and map what the survey drones would not survive to report. Whatever is out there gets catalogued, then shot.` },
+
+    { key: 'capital', name: 'Capital Ship Assault', risk: 'extreme', scoreMod: -16, damage: 1.8, scale: 1.6, gain: false,
+      systems: ['hull','battery','pointdef','tubes','hangar','reactor'],
+      cost: { fuel: 190, mun: 380, sup: 180 },
+      reward: { req: 18500, smp: 60, mun: 120 },
+      desc: (c, f) => `Close with the ${f.capital} anchored over ${c.planet} and board it. Macro-cannons to strip the shielding, launch tubes to put Helldivers through the breach.` },
+
+    { key: 'minefield', name: 'Void Minefield Interdiction', risk: 'high', scoreMod: -3, damage: 1.3, scale: 0.7, gain: true,
+      systems: ['hull','pointdef','engines'],
+      cost: { fuel: 110, mun: 190, sup: 55 },
+      reward: { req: 5600, mun: 240, fuel: 120, smp: 16 },
+      desc: (c, f) => `Clear the mined approach corridor to ${c.planet}. Recovered warheads go straight into our own magazines, assuming they come aboard intact.` },
+
+    /* ---- fleet actions ---- */
+    { key: 'battlegroup', name: 'Battle Group Fleet Action', risk: 'high', scoreMod: -5, damage: 1.3, scale: 1.1, gain: false,
+      systems: ['hull','battery','pointdef','engines'],
+      cost: { fuel: 150, mun: 290, sup: 80 },
+      reward: { req: 10800, mun: 70, smp: 16 },
+      desc: (c, f) => `Take the entire battle group into the ${c.planet} engagement zone in line formation. Escorts screen the flanks while the Titan's broadside does the arithmetic on the enemy's ${f.vesselPl}.` },
+
+    { key: 'carrier', name: 'Carrier Strike Operation', risk: 'moderate', scoreMod: 4, damage: 0.85, scale: 1.0, gain: false,
+      systems: ['hangar','pointdef','tubes'],
+      cost: { fuel: 120, mun: 210, sup: 110 },
+      reward: { req: 7600, smp: 12 },
+      desc: (c, f) => `Stand off outside effective range of ${c.planet} and fight the whole engagement with the air wing. Four hundred Eagles cycling through the hangar spine until the enemy stops launching.` },
+
+    { key: 'screen', name: 'Fleet Screening Maneuver', risk: 'low', scoreMod: 10, damage: 0.6, scale: 0.7, gain: true,
+      systems: ['pointdef','engines','hull'],
+      cost: { fuel: 100, mun: 120, sup: 50 },
+      reward: { req: 3600, mun: 150, fuel: 90, smp: 8 },
+      desc: (c, f) => `Interpose the Titan between the ${c.planet} fleet anchorage and the ${f.unit}. Nothing gets through the Rampart grid, and grateful task forces resupply us on their way out.` },
+
+    { key: 'armada', name: 'Grand Armada Offensive', risk: 'extreme', scoreMod: -14, damage: 1.7, scale: 1.7, gain: false, minCapitals: 2,
+      systems: ['hull','battery','pointdef','tubes','hangar','engines'],
+      cost: { fuel: 210, mun: 400, sup: 200 },
+      reward: { req: 19500, mun: 130, smp: 55 },
+      desc: (c, f) => `Every hull Super Earth can spare converges on ${c.planet} under the Titan's flag. A general fleet action across the entire orbital plane, and at least two ${f.capital}-class hulls anchoring the enemy line.` },
+
+    /* ---- capital-ship engagements ---- */
+    { key: 'flagship', name: 'Flagship Duel', risk: 'high', scoreMod: -9, damage: 1.45, scale: 1.0, gain: false, minCapitals: 1,
+      systems: ['hull','battery','pointdef','reactor'],
+      cost: { fuel: 160, mun: 320, sup: 90 },
+      reward: { req: 13500, smp: 34 },
+      desc: (c, f) => `Single combat with the ${f.capital} holding ${c.planet}. Spinal coilguns loaded, Sovereign capacitor charging, no escorts between the two of them.` },
+
+    { key: 'leviathan', name: 'Leviathan Hunt', risk: 'extreme', scoreMod: -18, damage: 1.9, scale: 1.5, gain: false, minCapitals: 1,
+      systems: ['hull','battery','pointdef','tubes','reactor'],
+      cost: { fuel: 200, mun: 360, sup: 170 },
+      reward: { req: 21000, mun: 100, smp: 70 },
+      desc: (c, f) => `Something enormous is moving in the dark past ${c.planet}, and Command wants it dead. Selective cloak up, run silent, and put every Judgment round into it the moment it presents a flank.` },
+
+    { key: 'warlord', name: 'Warlord Decapitation Strike', risk: 'high', scoreMod: -7, damage: 1.4, scale: 1.2, gain: false, minCapitals: 1,
+      systems: ['tubes','hangar','hull','battery'],
+      cost: { fuel: 170, mun: 300, sup: 160 },
+      reward: { req: 15000, smp: 44 },
+      desc: (c, f) => `Board the ${f.capital} directing the ${c.planet} campaign and kill whatever is giving the orders. Breach, sweep, and get the Helldivers out before the reactor goes.` },
+
+    { key: 'armadabreak', name: 'Armada Breaker Assault', risk: 'extreme', scoreMod: -20, damage: 2.0, scale: 1.8, gain: false, minCapitals: 3,
+      systems: ['hull','battery','pointdef','tubes','hangar','reactor','engines'],
+      cost: { fuel: 240, mun: 440, sup: 220 },
+      reward: { req: 24000, mun: 160, smp: 85 },
+      desc: (c, f) => `Three or more ${f.capital}-class hulls hold the ${c.planet} approach and the Titan is going in alone to break all of them. This is what the Colossus Project was reclassified for.` }
+  ];
+
+  const CODE_ADJ = ['IRON','EAGLE','CRIMSON','MANAGED','ETERNAL','SOVEREIGN','GILDED','THUNDEROUS','RIGHTEOUS','ABSOLUTE','VIGILANT','GLORIOUS','SILENT','BURNING','STEADFAST','SOLEMN','GRAVEN','TRUE'];
+  const CODE_NOUN = ['VERDICT','LIBERTY','BULWARK','HAMMERFALL','DAWN','RECKONING','MANDATE','ACCORD','DOCTRINE','HARVEST','CURTAIN','TIDE','ANVIL','DECREE','LANTERN','THRESHOLD','SENTINEL','PROVIDENCE'];
+
+  /* ---------------------------------------------------------------
+     UTILITIES
+  --------------------------------------------------------------- */
+  const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+
+  // Super Earth date: exactly 160 years ahead of real time.
+  function seDate(ms) {
+    const d = new Date(ms == null ? Date.now() : ms);
+    return String(d.getDate()).padStart(2, '0') + '.' + MONTHS[d.getMonth()] + '.' + (d.getFullYear() + 160);
+  }
+  function seTime(ms) {
+    const d = new Date(ms == null ? Date.now() : ms);
+    return String(d.getHours()).padStart(2, '0') + String(d.getMinutes()).padStart(2, '0') + ' HOURS';
+  }
+
+  function clampPct(n) { return Math.max(0, Math.min(100, Math.round(n))); }
+  function clampRes(n, cap) { return Math.max(0, Math.min(cap, Math.round(n))); }
+  function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+  function rint(min, max) { return Math.floor(min + Math.random() * (max - min + 1)); }
+  function num(n) { return Math.round(n).toLocaleString('en-US'); }
+  function healthColor(p) { return p > 65 ? '#6fae4a' : p > 35 ? '#f2b705' : '#c23b3b'; }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  }
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+  /* ---------------------------------------------------------------
+     STATE
+  --------------------------------------------------------------- */
+  const CREW_MAX = 250000;
+  const ESCORT_MAX = 24;
+
+  function defaultState() {
+    const parts = {};
+    PART_KEYS.forEach(k => parts[k] = 100);
+    return {
+      version: 3,
+      parts,
+      morale: 82,
+      crew: CREW_MAX,
+      escorts: 18,
+      res: { req: 128000, mun: 7400, fuel: 4100, sup: 6200, smp: 380 },
+      offers: [],
+      offerCtx: null,
+      lastDeploy: 0,
+      lastTick: Date.now(),
+      activity: null,
+      emergency: { stores: 0, refit: 0 },
+      log: [],
+      stats: { ops: 0, wins: 0, capitalKills: 0, kia: 0, vesselsDestroyed: 0 }
+    };
+  }
+
+  const HOUR = 3600000;
+  const DAY = 86400000;
+  const PREP_MS = HOUR;                 // 1 hour launch prep, cancellable
+  const REPAIR_MINOR_MS = 12 * HOUR;
+  const REPAIR_FULL_MS  = 24 * HOUR;
+  const RESUPPLY_MINOR_MS = 7 * DAY;
+  const RESUPPLY_MAJOR_MS = 21 * DAY;
+
+  // Days to drain a full hold through pure inaction. Scaled per resource so the
+  // whole manifest doesn't empty at once; rations go first, samples last.
+  const DECAY_DAYS = { sup: 55, fuel: 70, mun: 90, req: 120, smp: 150 };
+
+  function isBusy() { return !!state.activity; }
+  function activityLabel() {
+    if (!state.activity) return '';
+    if (state.activity.kind === 'mission') return state.activity.phase === 'prep' ? 'Launch preparation' : 'Operation underway';
+    if (state.activity.kind === 'repair') return 'Repairs underway';
+    if (state.activity.kind === 'resupply') return 'Resupply underway';
+    return '';
+  }
+  function activityProgress() {
+    const a = state.activity;
+    if (!a) return 0;
+    const start = a.phase === 'prep' ? a.prepStart : a.start;
+    const end = a.phase === 'prep' ? a.prepEnd : a.end;
+    if (!end || end <= start) return 0;
+    return Math.max(0, Math.min(1, (Date.now() - start) / (end - start)));
+  }
+  function fmtRemaining(ms) {
+    if (ms <= 0) return 'complete';
+    const d = Math.floor(ms / DAY);
+    const h = Math.floor((ms % DAY) / HOUR);
+    const m = Math.floor((ms % HOUR) / 60000);
+    const s = Math.floor((ms % 60000) / 1000);
+    if (d > 0) return `${d}d ${h}h ${m}m`;
+    if (h > 0) return `${h}h ${m}m ${s}s`;
+    if (m > 0) return `${m}m ${s}s`;
+    return `${s}s`;
+  }
+
+  let state = defaultState();
+
+  function avgParts() { return PART_KEYS.reduce((s, k) => s + state.parts[k], 0) / PART_KEYS.length; }
+  function supplyFill() {
+    return RES_KEYS.reduce((s, k) => s + (state.res[k] / RES[k].cap), 0) / RES_KEYS.length * 100;
+  }
+  function readiness() { return avgParts() * 0.5 + state.morale * 0.3 + supplyFill() * 0.2; }
+
+  /* ---------------------------------------------------------------
+     SAVE / LOAD
+  --------------------------------------------------------------- */
+  let saveTimer = null;
+  async function saveState(quiet) {
+    const payload = JSON.stringify(state);
+    const ok = await Store.save(payload);
+    const el = document.getElementById('saveState');
+    if (el) {
+      if (ok) {
+        el.textContent = 'Fleet record synchronized · ' + seTime();
+        el.style.color = '';
+      } else if (!dbConfigured()) {
+        el.textContent = 'Local only — fleet database not yet configured. See FIREBASE_DB_URL in the page source.';
+        el.style.color = 'var(--hazard)';
+      } else {
+        el.textContent = 'WARNING: record could not be written. Archive manually.';
+        el.style.color = 'var(--blood)';
+      }
+    }
+    if (!ok && !quiet && dbConfigured()) showToast('Storage unavailable — use "archive record" to save a backup file.');
+  }
+  function queueSave() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => saveState(true), 400);
+  }
+
+  async function loadState() {
+    const raw = await Store.load();
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        state = Object.assign(defaultState(), parsed);
+        state.parts = Object.assign(defaultState().parts, parsed.parts || {});
+        state.res = Object.assign(defaultState().res, parsed.res || {});
+        state.stats = Object.assign(defaultState().stats, parsed.stats || {});
+        state.emergency = Object.assign(defaultState().emergency, parsed.emergency || {});
+        if (!Array.isArray(state.log)) state.log = [];
+        if (!Array.isArray(state.offers)) state.offers = [];
+      } catch (e) {
+        console.warn('Corrupted record, starting fresh.', e);
+        state = defaultState();
+      }
+    }
+    applyPassiveRecovery();
+    restoreOrderForm();
+    // Catch up anything that ran to completion while the terminal was closed:
+    // prep may have elapsed into an active operation, which may itself have finished.
+    tickActivity();
+    tickActivity();
+    render();
+    saveState(true);
+  }
+
+  function applyPassiveRecovery() {
+    const now = Date.now();
+    const elapsedH = Math.min((now - (state.lastTick || now)) / HOUR, 24 * 120); // cap at 120 days
+    if (elapsedH > 0) {
+      // Stores are consumed by daily shipboard life. Each resource burns a share of its
+      // own capacity per hour, so a full hold takes DECAY_DAYS of total inaction to empty.
+      if (!(state.activity && state.activity.kind === 'resupply')) {
+        RES_KEYS.forEach(k => {
+          const perHour = RES[k].cap / (DECAY_DAYS[k] * 24);
+          state.res[k] = clampRes(state.res[k] - elapsedH * perHour, RES[k].cap);
+        });
+      }
+      state.morale = clampPct(state.morale + elapsedH * 0.35);
+      state.crew   = Math.min(CREW_MAX, Math.round(state.crew + elapsedH * 40));
+    }
+    state.lastTick = now;
+  }
+
+  /* ---------------------------------------------------------------
+     RENDER
+  --------------------------------------------------------------- */
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.classList.remove('show'), 3600);
+  }
+
+  function renderChrono() {
+    document.getElementById('chronoDate').textContent = seDate();
+    document.getElementById('chronoTime').textContent = seTime();
+    const a = state.activity;
+    let station;
+    if (a && (a.kind === 'repair' || a.kind === 'resupply')) {
+      station = 'Orbital Hub';
+    } else if (a && a.kind === 'mission') {
+      station = a.phase === 'prep' ? a.offer.ctx.planet + ' — Staging' : a.offer.ctx.planet + ' Approach';
+    } else {
+      const last = state.log[state.log.length - 1];
+      station = last && last.planet ? last.planet + ' Approach' : 'Deep Void';
+    }
+    document.getElementById('chronoStation').textContent = station;
+  }
+
+  function readinessLabel() {
+    const r = readiness();
+    if (r >= 82) return 'CONDITION ONE — FULLY COMBAT EFFECTIVE';
+    if (r >= 62) return 'CONDITION TWO — COMBAT EFFECTIVE';
+    if (r >= 42) return 'CONDITION THREE — DEGRADED';
+    if (r >= 25) return 'CONDITION FOUR — LIMITED OPERATIONS';
+    return 'CONDITION FIVE — NON-EFFECTIVE';
+  }
+
+  function render() {
+    renderChrono();
+
+    const avg = avgParts();
+    document.getElementById('statusLine').textContent =
+      avg < 32 ? 'Vessel status: CRITICAL — drydock repairs required before further action.' :
+      state.morale < 30 ? 'Vessel status: operational, but crew morale is faltering.' :
+      state.log.length === 0 ? 'Standing by for first deployment orders.' :
+      'Vessel status: operational. Guns hot, tubes loaded.';
+
+    document.getElementById('readinessTag').textContent = readinessLabel();
+    document.getElementById('statCondition').textContent = Math.round(avg) + '%';
+    document.getElementById('statCondition').style.color = healthColor(avg);
+    document.getElementById('statMorale').textContent = state.morale + '%';
+    document.getElementById('statMorale').style.color = healthColor(state.morale);
+    document.getElementById('statCrew').textContent = num(state.crew);
+    document.getElementById('statEscorts').textContent = state.escorts + ' / ' + ESCORT_MAX;
+    document.getElementById('statOps').textContent = num(state.stats.ops);
+    document.getElementById('statCapKills').textContent = num(state.stats.capitalKills);
+
+    // systems
+    document.getElementById('partsList').innerHTML = PART_KEYS.map(k => `
+      <div class="part-row">
+        <div class="part-label"><span>${PART_LABELS[k]}</span><span class="val">${state.parts[k]}%</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:${state.parts[k]}%; background:${healthColor(state.parts[k])}"></div></div>
+      </div>`).join('');
+
+    const paint = (id, key) => { const el = document.getElementById(id); if (el) el.setAttribute('fill', healthColor(state.parts[key])); };
+    paint('svgHull','hull');
+    paint('svgBatteryL','battery'); paint('svgBatteryR','battery');
+    paint('svgHangarL','hangar'); paint('svgHangarR','hangar');
+    paint('svgReactor','reactor');
+    paint('svgEngineL','engines'); paint('svgEngineC','engines'); paint('svgEngineR','engines');
+    document.querySelectorAll('#svgTubes rect').forEach(r => r.setAttribute('fill', healthColor(state.parts.tubes)));
+    document.querySelectorAll('#svgPointDef circle').forEach(r => r.setAttribute('fill', healthColor(state.parts.pointdef)));
+    document.querySelectorAll('#svgMedbay rect').forEach(r => r.setAttribute('fill', healthColor(state.parts.medbay)));
+
+    const warn = document.getElementById('warningBanner');
+    if (avg < 32) {
+      warn.innerHTML = `<div class="warning-banner"><strong>Drydock required.</strong> The Titan cannot be responsibly redeployed in this condition. Run repairs from Ship Systems, or break the seals on an emergency refit. Operations stay locked until average condition rises above 32%.</div>`;
+    } else if (state.morale < 25) {
+      warn.innerHTML = `<div class="warning-banner"><strong>Morale advisory.</strong> Crew effectiveness is degraded. Rations, shore rotation, or a clean victory would help. So would fewer catastrophic losses.</div>`;
+    } else {
+      warn.innerHTML = '';
+    }
+
+    renderStores();
+    renderOffers();
+    renderRepair();
+    renderResupply();
+    renderActivityPanel();
+    renderLog();
+    renderConsoleCurrents();
+    renderCooldown();
+    const es = document.getElementById('emgStores'), er = document.getElementById('emgRefit');
+    if (es) es.textContent = num(state.emergency.stores);
+    if (er) er.textContent = num(state.emergency.refit);
+  }
+
+  function renderStores() {
+    document.getElementById('storesTag').textContent = 'HOLD CAPACITY ' + Math.round(supplyFill()) + '%';
+    document.getElementById('storesList').innerHTML = RES_KEYS.map(k => {
+      const r = RES[k], v = state.res[k], pctv = (v / r.cap) * 100;
+      return `
+      <div class="store-row">
+        <div class="store-head">
+          <span>${r.label}</span>
+          <span class="amt">${num(v)} <small>${r.unit} / ${num(r.cap)}</small></span>
+        </div>
+        <div class="bar-track"><div class="bar-fill" style="width:${pctv}%; background:${r.color}"></div></div>
+        <div class="store-desc">${r.desc}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function renderConsoleCurrents() {
+    document.getElementById('curMorale').textContent = 'now ' + state.morale + '%';
+    document.getElementById('curCrew').textContent = 'now ' + num(state.crew);
+    document.getElementById('curEscorts').textContent = 'now ' + state.escorts + ' of ' + ESCORT_MAX;
+    RES_KEYS.forEach(k => {
+      const el = document.getElementById('cur_' + k);
+      if (el) el.textContent = 'now ' + num(state.res[k]) + ' ' + RES[k].unit;
+    });
+  }
+
+  function cooldownRemaining() {
+    if (!state.lastDeploy) return 0;
+    const last = state.log[state.log.length - 1];
+    const days = last && last.duration ? last.duration : 3;
+    const cd = days * 12 * 60 * 1000; // 12 real minutes per mission-day
+    return Math.max(0, cd - (Date.now() - state.lastDeploy));
+  }
+
+  function renderCooldown() {
+    const note = document.getElementById('cooldownNote');
+    const avg = avgParts();
+    if (isBusy()) {
+      note.textContent = state.activity.kind === 'mission'
+        ? 'An operation is already underway. Track it on the status board above.'
+        : 'The Titan is docked at Orbital Hub. New operations cannot be authorized until the yard work concludes.';
+      return;
+    }
+    if (avg < 32) {
+      note.innerHTML = 'Operations locked: ship condition below minimum. Repair before requesting orders.';
+      return;
+    }
+    const rem = cooldownRemaining();
+    if (rem > 0) {
+      const h = Math.floor(rem / 3600000), m = Math.floor((rem % 3600000) / 60000);
+      note.innerHTML = `Battle group refitting — next window in ${h > 0 ? h + 'h ' : ''}${m}m. <button class="reset-link" id="waiverBtn">request High Command waiver</button>`;
+      const wb = document.getElementById('waiverBtn');
+      if (wb) wb.addEventListener('click', () => {
+        state.lastDeploy = 0;
+        state.morale = clampPct(state.morale - 2);
+        render(); queueSave();
+        showToast('Waiver granted. The crew has been informed they volunteered.');
+      });
+    } else {
+      note.textContent = 'Battle group ready. Request orders to see available operations.';
+    }
+  }
+
+  function renderRepair() {
+    const minorBtn = document.getElementById('repairMinorBtn');
+    const fullBtn = document.getElementById('repairFullBtn');
+    const note = document.getElementById('repairNote');
+    if (!minorBtn || !fullBtn || !note) return;
+    const needs = PART_KEYS.some(k => state.parts[k] < 100);
+
+    if (isBusy()) {
+      minorBtn.disabled = true; fullBtn.disabled = true;
+      note.textContent = state.activity.kind === 'repair'
+        ? 'Repairs in progress — see the operations status board above.'
+        : 'The Titan is committed elsewhere. Repairs cannot begin until the current operation concludes.';
+      return;
+    }
+    if (!needs) {
+      minorBtn.disabled = true; fullBtn.disabled = true;
+      note.textContent = 'All systems at full integrity.';
+      return;
+    }
+    const cMinor = repairCost('minor');
+    const cFull = repairCost('full');
+    minorBtn.disabled = !(state.res.req >= cMinor.req && state.res.sup >= cMinor.sup);
+    fullBtn.disabled = !(state.res.req >= cFull.req && state.res.sup >= cFull.sup && state.res.smp >= cFull.smp);
+    note.innerHTML =
+      `Minor repairs — 12 hours, +${REPAIR_STEP} points to every damaged system. Cost ${num(cMinor.req)} R, ${num(cMinor.sup)} crates.<br>` +
+      `Full repairs — 24 hours, every system restored to 100%. Cost ${num(cFull.req)} R, ${num(cFull.sup)} crates, ${num(cFull.smp)} samples.<br>` +
+      `The Titan docks at Orbital Hub while work is underway. You can break off at any point and keep the progress made.`;
+  }
+
+  const REPAIR_STEP = 22;
+  function repairTargets(mode) {
+    const t = {};
+    PART_KEYS.forEach(k => {
+      if (state.parts[k] >= 100) return;
+      t[k] = mode === 'full' ? 100 : Math.min(100, state.parts[k] + REPAIR_STEP);
+    });
+    return t;
+  }
+  function repairCost(mode) {
+    const targets = repairTargets(mode);
+    const restored = Object.keys(targets).reduce((s, k) => s + (targets[k] - state.parts[k]), 0);
+    return {
+      req: Math.max(1200, Math.round(restored * 240)),
+      sup: Math.max(40, Math.round(restored * 3.5)),
+      // Full refits draw on recovered samples too — traded to Command for the parts a
+      // routine repair wouldn't need. Minor repairs stay sample-free.
+      smp: (mode === 'full' && restored > 0) ? Math.max(5, Math.round(restored * 0.12)) : 0,
+      restored
+    };
+  }
+
+  const REPAIR_FLAVOR = {
+    hull: ['Hull crews cutting away buckled plating on the dorsal spine.', 'New armor segments craned into place along the flank.', 'Pressure testing the resealed compartments.'],
+    battery: ['Judgment coilgun barrels pulled for bore inspection.', 'Autoloader tracks realigned on the 380mm mounts.', 'Test-firing the forward battery into empty space.'],
+    pointdef: ['Rampart laser emitters swapped out across the grid.', 'Targeting solutions recalibrated on the point-defense net.', 'Running live intercept drills against practice drones.'],
+    tubes: ['Fouled hellpod tubes cleared and relined.', 'Launch rail actuators replaced on the forward bank.', 'Cycling empty pods to confirm tube integrity.'],
+    hangar: ['Hangar deck plating relaid where the fires burned through.', 'Eagle catapults retensioned and load-tested.', 'Deck crews repainting the landing guides.'],
+    engines: ['Sublight drive nozzles reprofiled after burn-through.', 'Coolant loops flushed and repacked.', 'Running the drives up to forty percent on the test stand.'],
+    reactor: ['Reactor containment segments replaced under full shutdown.', 'Shielding re-poured around the primary core.', 'Slow restart underway — the whole ship is on auxiliary.'],
+    medbay: ['Medical decks scrubbed and restocked.', 'Surgical bays recertified for combat casualties.', 'Trauma teams rotated back onto full shifts.']
+  };
+
+  function buildRepairSteps(targets) {
+    const steps = [];
+    Object.keys(targets).forEach(k => {
+      const lines = REPAIR_FLAVOR[k] || ['Work proceeding on ' + PART_LABELS[k] + '.'];
+      steps.push(`${PART_LABELS[k]}: ${pick(lines)}`);
+    });
+    steps.push('Damage control signs off. Yard crews clearing the hull.');
+    return steps;
+  }
+
+  function startRepair(mode) {
+    if (isBusy()) { showToast('The Titan is already committed.'); return; }
+    const targets = repairTargets(mode);
+    if (!Object.keys(targets).length) { showToast('Nothing to repair.'); return; }
+    const cost = repairCost(mode);
+    if (state.res.req < cost.req || state.res.sup < cost.sup || state.res.smp < cost.smp) {
+      showToast('Insufficient stores for repairs.'); return;
+    }
+    const hours = mode === 'full' ? 24 : 12;
+    const costLine = cost.smp > 0
+      ? `Cost: ${num(cost.req)} R, ${num(cost.sup)} crates and ${num(cost.smp)} samples, charged now\n`
+      : `Cost: ${num(cost.req)} R and ${num(cost.sup)} crates, charged now\n`;
+    const ok = confirm(
+      `BEGIN ${mode === 'full' ? 'FULL' : 'MINOR'} REPAIRS?\n\n` +
+      `Duration: ${hours} hours (real time)\n${costLine}` +
+      `Systems affected: ${Object.keys(targets).map(k => PART_LABELS[k]).join(', ')}\n\n` +
+      `The Titan will dock at Orbital Hub and cannot deploy until repairs end. You may break off early and keep whatever was completed.`
+    );
+    if (!ok) return;
+
+    state.res.req = clampRes(state.res.req - cost.req, RES.req.cap);
+    state.res.sup = clampRes(state.res.sup - cost.sup, RES.sup.cap);
+    if (cost.smp > 0) state.res.smp = clampRes(state.res.smp - cost.smp, RES.smp.cap);
+
+    const from = {};
+    Object.keys(targets).forEach(k => from[k] = state.parts[k]);
+    const now = Date.now();
+    state.activity = {
+      kind: 'repair',
+      mode,
+      phase: 'active',
+      start: now,
+      end: now + (mode === 'full' ? REPAIR_FULL_MS : REPAIR_MINOR_MS),
+      from,
+      targets,
+      steps: buildRepairSteps(targets)
+    };
+    render(); queueSave();
+    showToast('Docked at Orbital Hub. Repair crews aboard.');
+  }
+
+  function concludeRepair(p) {
+    const a = state.activity;
+    if (!a || a.kind !== 'repair') return;
+    const frac = Math.max(0, Math.min(1, p));
+    Object.keys(a.targets).forEach(k => {
+      state.parts[k] = clampPct(a.from[k] + (a.targets[k] - a.from[k]) * frac);
+    });
+    state.morale = clampPct(state.morale + Math.round(3 * frac));
+    state.activity = null;
+    showToast(frac >= 1 ? 'Repairs complete. The Titan is whole again.' : `Repairs broken off at ${Math.round(frac * 100)}%. Progress retained.`);
+  }
+
+  /* ---------------------------------------------------------------
+     RESUPPLY
+  --------------------------------------------------------------- */
+  // Resupply is priced in Requisition Slips only — you're not spending fuel to buy fuel.
+  // Cost scales with how much total deficit (as a fraction of each store's cap) is being
+  // made up, so a small top-up is cheap and a from-empty major resupply costs real money
+  // without being anywhere close to unaffordable.
+  const RESUPPLY_UNIT_COST = 16000;
+  function resupplyCost(mode) {
+    const targets = resupplyTargets(mode);
+    const deficitSum = RES_KEYS.filter(k => k !== 'req')
+      .reduce((s, k) => s + Math.max(0, targets[k] - state.res[k]) / RES[k].cap, 0);
+    return { req: Math.max(300, Math.round(deficitSum * RESUPPLY_UNIT_COST)), deficitSum };
+  }
+
+  function resupplyTargets(mode) {
+    const t = {};
+    RES_KEYS.forEach(k => {
+      if (k === 'req') { t[k] = state.res[k]; return; } // req is spent on resupply, never gained from it
+      t[k] = mode === 'major'
+        ? RES[k].cap
+        : clampRes(state.res[k] + RES[k].cap * 0.20, RES[k].cap);
+    });
+    return t;
+  }
+
+  function renderResupply() {
+    const minorBtn = document.getElementById('resupplyMinorBtn');
+    const majorBtn = document.getElementById('resupplyMajorBtn');
+    const note = document.getElementById('resupplyNote');
+    if (!minorBtn || !majorBtn || !note) return;
+    if (isBusy()) {
+      minorBtn.disabled = true; majorBtn.disabled = true;
+      note.textContent = state.activity.kind === 'resupply'
+        ? 'Resupply in progress — see the operations status board above.'
+        : 'The Titan is committed elsewhere. Resupply cannot begin until the current operation concludes.';
+      return;
+    }
+    const full = RES_KEYS.every(k => state.res[k] >= RES[k].cap);
+    const cMinor = resupplyCost('minor');
+    const cMajor = resupplyCost('major');
+    minorBtn.disabled = full || state.res.req < cMinor.req;
+    majorBtn.disabled = full || state.res.req < cMajor.req;
+    note.innerHTML = full
+      ? 'All holds at capacity. Nothing to requisition.'
+      : `Minor resupply — 1 week, adds 20% of capacity to every store. Cost: ${num(cMinor.req)} R.<br>` +
+        `Major resupply — 3 weeks, brings every store back to 100%. Cost: ${num(cMajor.req)} R.<br>` +
+        `The Titan docks at Orbital Hub while tenders come alongside. Break off at any point and keep what was already loaded.`;
+  }
+
+  function startResupply(mode) {
+    if (isBusy()) { showToast('The Titan is already committed.'); return; }
+    const cost = resupplyCost(mode);
+    if (state.res.req < cost.req) { showToast('Insufficient Requisition Slips to authorize resupply.'); return; }
+    const ok = confirm(
+      `BEGIN ${mode === 'major' ? 'MAJOR' : 'MINOR'} RESUPPLY?\n\n` +
+      `Duration: ${mode === 'major' ? '3 weeks' : '1 week'} (real time)\n` +
+      (mode === 'major' ? 'Every store returns to 100% capacity.\n' : 'Every store gains 20% of its capacity.\n') +
+      `Cost: ${num(cost.req)} R, charged now\n` +
+      `\nThe Titan will dock at Orbital Hub and cannot deploy until resupply ends. You may break off early and keep whatever was loaded.`
+    );
+    if (!ok) return;
+
+    state.res.req = clampRes(state.res.req - cost.req, RES.req.cap);
+
+    // Targets are computed after the fee is debited, so Requisition Slips (excluded from
+    // resupply's own targets already) never appear to climb back up over the course of it.
+    const targets = resupplyTargets(mode);
+    const from = {};
+    RES_KEYS.forEach(k => from[k] = state.res[k]);
+    const now = Date.now();
+    state.activity = {
+      kind: 'resupply',
+      mode,
+      phase: 'active',
+      start: now,
+      end: now + (mode === 'major' ? RESUPPLY_MAJOR_MS : RESUPPLY_MINOR_MS),
+      from,
+      targets
+    };
+    render(); queueSave();
+    showToast('Docked at Orbital Hub. Supply tenders inbound.');
+  }
+
+  function concludeResupply(p) {
+    const a = state.activity;
+    if (!a || a.kind !== 'resupply') return;
+    const frac = Math.max(0, Math.min(1, p));
+    RES_KEYS.forEach(k => {
+      state.res[k] = clampRes(a.from[k] + (a.targets[k] - a.from[k]) * frac, RES[k].cap);
+    });
+    state.activity = null;
+    showToast(frac >= 1 ? 'Resupply complete. Holds are full.' : `Resupply broken off at ${Math.round(frac * 100)}%. Loaded stores retained.`);
+  }
+
+  /* ---------------------------------------------------------------
+     OPERATION OFFERS
+  --------------------------------------------------------------- */
+  function scaledCost(op, ctx) {
+    const mag = RESISTANCE[ctx.resistance].magnitude;
+    const out = {};
+    Object.keys(op.cost).forEach(k => {
+      out[k] = Math.round(op.cost[k] * ctx.duration * (0.6 + mag * 0.55));
+    });
+    return out;
+  }
+  function scaledReward(op, ctx) {
+    const mag = RESISTANCE[ctx.resistance].magnitude;
+    const out = {};
+    Object.keys(op.reward).forEach(k => {
+      out[k] = Math.round(op.reward[k] * ctx.duration * (0.7 + mag * 0.5));
+    });
+    return out;
+  }
+
+  function generateOffers(ctx) {
+    const pool = OP_TYPES.slice();
+    // guarantee at least one resource operation
+    const gainers = pool.filter(o => o.gain);
+    const chosen = [pick(gainers)];
+    const rest = pool.filter(o => o.key !== chosen[0].key).sort(() => Math.random() - 0.5);
+    // an extreme-risk signature op appears sometimes
+    const count = 4;
+    for (const o of rest) {
+      if (chosen.length >= count) break;
+      if (o.risk === 'extreme' && Math.random() > 0.55) continue;
+      chosen.push(o);
+    }
+    chosen.sort(() => Math.random() - 0.5);
+    const f = FACTION[ctx.faction] || FACTION.Mixed;
+    return chosen.map(o => ({
+      id: uid(),
+      typeKey: o.key,
+      code: 'OPERATION ' + pick(CODE_ADJ) + ' ' + pick(CODE_NOUN),
+      name: o.name,
+      risk: o.risk,
+      gain: o.gain,
+      desc: o.desc(ctx, f),
+      cost: scaledCost(o, ctx),
+      reward: scaledReward(o, ctx),
+      ctx: Object.assign({}, ctx)
+    }));
+  }
+
+  function affordable(cost) {
+    return Object.keys(cost).every(k => state.res[k] >= cost[k]);
+  }
+
+  function renderOffers() {
+    const wrap = document.getElementById('opsList');
+    if (!state.offers.length) {
+      wrap.innerHTML = `<div class="ops-empty">No operations on the board. Set a target and request orders — Command will forward what the Titan is positioned to run.</div>`;
+      return;
+    }
+    const locked = avgParts() < 32 || cooldownRemaining() > 0 || isBusy();
+    wrap.innerHTML = state.offers.map(o => {
+      const costHtml = Object.keys(o.cost).map(k =>
+        `<div class="cost-line ${state.res[k] < o.cost[k] ? 'short' : ''}">${RES[k].label}: ${num(o.cost[k])} ${RES[k].unit}${state.res[k] < o.cost[k] ? ' — short' : ''}</div>`).join('');
+      const rewardHtml = Object.keys(o.reward).map(k =>
+        `<div class="yield-line">${RES[k].label}: up to ${num(o.reward[k])} ${RES[k].unit}</div>`).join('');
+      const can = affordable(o.cost) && !locked;
+      const cls = 'op' + (o.gain ? ' gain' : '') + (o.risk === 'extreme' ? ' signature' : '');
+      return `
+      <article class="${cls}">
+        <div class="op-top">
+          <span class="op-code">${esc(o.code)}</span>
+          <span class="op-risk risk-${o.risk}">${o.risk.toUpperCase()} RISK</span>
+        </div>
+        <div class="op-meta">${esc(o.name)} · ${esc(o.ctx.planet)} · ${esc(o.ctx.faction)} · ${RESISTANCE[o.ctx.resistance].label} resistance · ${o.ctx.duration} day${o.ctx.duration === 1 ? '' : 's'}</div>
+        <p class="op-desc">${esc(o.desc)}</p>
+        <div class="op-cols">
+          <div class="box"><h5>Stores committed</h5>${costHtml}</div>
+          <div class="box"><h5>Projected yield</h5>${rewardHtml}</div>
+        </div>
+        ${o.gain ? '<span class="op-flag">RESOURCE OPERATION</span>' : ''}
+        <button class="op-launch" data-op="${o.id}" ${can ? '' : 'disabled'}>${
+          locked ? 'Operations locked' : (affordable(o.cost) ? 'Authorize launch' : 'Stores insufficient')
+        }</button>
+      </article>`;
+    }).join('');
+
+    wrap.querySelectorAll('button[data-op]').forEach(b => {
+      b.addEventListener('click', () => launchOperation(b.getAttribute('data-op')));
+    });
+  }
+
+  /* ---------------------------------------------------------------
+     RESOLUTION
+  --------------------------------------------------------------- */
+  function launchOperation(id) {
+    const offer = state.offers.find(o => o.id === id);
+    if (!offer) return;
+    if (isBusy()) { showToast('The Titan is already committed. Resolve the current operation first.'); return; }
+    if (!affordable(offer.cost)) { showToast('Stores insufficient for this operation.'); return; }
+
+    const costText = Object.keys(offer.cost).map(k => `${num(offer.cost[k])} ${RES[k].unit} ${RES[k].label}`).join('\n  ');
+    const ok = confirm(
+      `AUTHORIZE ${offer.code}?\n\n${offer.name} — ${offer.ctx.planet}\nDuration: ${offer.ctx.duration} day${offer.ctx.duration === 1 ? '' : 's'} (real time)\n\nStores committed immediately:\n  ${costText}\n\n` +
+      `Launch preparation takes 1 hour and can be cancelled for a full refund. Once the operation begins, stores are spent.`
+    );
+    if (!ok) return;
+
+    // commit stores at prep start; a prep cancellation refunds them in full
+    const spent = {};
+    Object.keys(offer.cost).forEach(k => {
+      spent[k] = Math.min(offer.cost[k], state.res[k]);
+      state.res[k] = clampRes(state.res[k] - spent[k], RES[k].cap);
+    });
+
+    const now = Date.now();
+    state.activity = {
+      kind: 'mission',
+      phase: 'prep',
+      offer,
+      spent,
+      prepStart: now,
+      prepEnd: now + PREP_MS,
+      start: 0,
+      end: 0,
+      plan: null
+    };
+    state.offers = [];
+    render(); queueSave();
+    showToast(offer.code + ' entering launch preparation. One hour to abort.');
+  }
+
+  // Determines the whole outcome the moment the operation actually begins. Metrics are
+  // then revealed progressively as the clock runs, so an abort keeps whatever happened.
+  function planOperation(offer, spent) {
+    const opType = OP_TYPES.find(o => o.key === offer.typeKey);
+    const ctx = offer.ctx;
+    const res = RESISTANCE[ctx.resistance];
+    const f = FACTION[ctx.faction] || FACTION.Mixed;
+
+    const roll = Math.random() * 100;
+    let score = roll * 0.62 + readiness() * 0.38 + res.scoreBonus + opType.scoreMod;
+    score = Math.max(0, Math.min(100, score));
+    const tier = TIERS.find(t => score >= t.min) || TIERS[TIERS.length - 1];
+
+    const durFactor = 0.55 + ctx.duration * 0.08;
+    const magnitude = durFactor * res.magnitude * opType.damage;
+
+    const hitCount = Math.min(opType.systems.length, 2 + Math.floor(Math.random() * 3));
+    const hits = opType.systems.slice().sort(() => Math.random() - 0.5).slice(0, hitCount);
+    const partDeltas = {};
+    hits.forEach(k => { partDeltas[k] = tier.dmg * magnitude + (Math.random() - 0.5) * 6; });
+
+    const moraleDelta = Math.round(tier.morale * (0.7 + res.magnitude * 0.35));
+
+    const gained = {};
+    Object.keys(offer.reward).forEach(k => {
+      const g = Math.round(offer.reward[k] * tier.rewardMult * (0.85 + Math.random() * 0.3));
+      if (g > 0) gained[k] = g;
+    });
+
+    const divers = Math.max(24, Math.round(ctx.duration * 380 * res.magnitude * opType.scale));
+    const casualtyRate = tier.casualty * (0.8 + Math.random() * 0.45);
+    const kia = Math.round(divers * casualtyRate * 0.42);
+    const wounded = Math.round(divers * casualtyRate * 0.62);
+    const crewLoss = Math.round((100 - tier.min) * 22 * magnitude * (0.7 + Math.random() * 0.6));
+    const hellpods = Math.round(divers * (1.1 + Math.random() * 0.6));
+    const eagleSorties = Math.round(ctx.duration * 70 * res.magnitude * opType.scale);
+    const shells = Math.round(spent.mun ? spent.mun * (7 + Math.random() * 9) : ctx.duration * 400);
+    const vesselsEngaged = Math.max(3, Math.round(ctx.duration * res.magnitude * (9 + Math.random() * 16) * opType.scale));
+    const vesselsKilled = Math.round(vesselsEngaged * tier.killRatio);
+    let capitals = (offer.typeKey === 'capital' || offer.typeKey === 'fleet')
+      ? Math.max(0, Math.round((tier.killRatio * (offer.typeKey === 'capital' ? 1.4 : 0.9)) * (1 + Math.random())))
+      : (tier.killRatio > 0.7 && Math.random() > 0.65 ? 1 : 0);
+    const guaranteed = opType.minCapitals || 0;
+    if (guaranteed > 0) capitals = Math.max(capitals, Math.round(guaranteed * Math.max(0.34, tier.killRatio)));
+    const groundKills = Math.round(ctx.duration * res.magnitude * (2400 + Math.random() * 5200) * opType.scale);
+    let escortLoss = 0;
+    if (tier.key === 'setback') escortLoss = rint(1, 2);
+    if (tier.key === 'catastrophe') escortLoss = rint(2, 5);
+    if (tier.key === 'pyrrhic') escortLoss = Math.random() > 0.5 ? 1 : 0;
+
+    const superiority = tier.key === 'decisive' ? 'ABSOLUTE'
+      : tier.key === 'victory' ? 'ESTABLISHED'
+      : tier.key === 'pyrrhic' ? 'CONTESTED'
+      : tier.key === 'setback' ? 'CONCEDED' : 'LOST';
+
+    const notables = [
+      `The Titan's forward batteries scattered ${f.orbital} across half a hemisphere before the first pod launched.`,
+      `A ${f.big} reached the shadow of the hull before point-defense caught it.`,
+      `Boarding parties reported ${f.adj} interference inside the ${f.vessel} wreck. The compartment was vented.`,
+      `Gun crews on the dorsal spine fired continuously for ${rint(4, 19)} hours. Two are being written up for it, favorably.`,
+      `Debris fouled three launch tubes during the assault; deck crews cleared them under fire.`,
+      `Command has flagged this ${f.unit} for continued monitoring and possible reprisal.`,
+      `Conditions over ${ctx.planet} degraded the targeting solution. The batteries compensated by firing more.`,
+      `The Ministry of Truth has requested gun-camera footage for the evening broadcast.`,
+      `A hangar deck fire was contained in eleven minutes. The deck chief has been recommended for a citation.`
+    ];
+
+    return {
+      tierKey: tier.key, tierLabel: tier.label, text: pick(tier.lines),
+      partDeltas, moraleDelta, gained,
+      report: {
+        divers, kia, wounded, hellpods, eagleSorties, shells,
+        vesselsEngaged, vesselsKilled, capitals, groundKills,
+        crewLoss, escortLoss, superiority,
+        capitalName: f.capital, vesselNoun: f.vesselPl, notable: pick(notables)
+      }
+    };
+  }
+
+  // Applies whatever share of the operation actually took place. p = 1 on completion.
+  function concludeMission(p, abandoned) {
+    const a = state.activity;
+    if (!a || a.kind !== 'mission' || !a.plan) return;
+    const offer = a.offer, ctx = offer.ctx, plan = a.plan;
+    const res = RESISTANCE[ctx.resistance];
+    const frac = Math.max(0, Math.min(1, p));
+    const sc = n => Math.round((n || 0) * frac);
+
+    Object.keys(plan.partDeltas).forEach(k => {
+      state.parts[k] = clampPct(state.parts[k] + plan.partDeltas[k] * frac);
+    });
+
+    let moraleDelta = Math.round(plan.moraleDelta * frac);
+    if (abandoned) moraleDelta -= 4;
+    state.morale = clampPct(state.morale + moraleDelta);
+
+    const gained = {};
+    Object.keys(plan.gained).forEach(k => {
+      const g = sc(plan.gained[k]);
+      if (g > 0) { gained[k] = g; state.res[k] = clampRes(state.res[k] + g, RES[k].cap); }
+    });
+
+    const r = plan.report;
+    const rep = {
+      divers: sc(r.divers), kia: sc(r.kia), wounded: sc(r.wounded), hellpods: sc(r.hellpods),
+      eagleSorties: sc(r.eagleSorties), shells: sc(r.shells), vesselsEngaged: sc(r.vesselsEngaged),
+      vesselsKilled: sc(r.vesselsKilled), capitals: sc(r.capitals), groundKills: sc(r.groundKills),
+      crewLoss: sc(r.crewLoss), escortLoss: sc(r.escortLoss),
+      superiority: abandoned ? 'WITHDRAWN' : r.superiority,
+      capitalName: r.capitalName, vesselNoun: r.vesselNoun, notable: r.notable
+    };
+
+    state.crew = Math.max(20000, state.crew - rep.crewLoss);
+    state.escorts = Math.max(0, state.escorts - rep.escortLoss);
+
+    state.stats.ops += 1;
+    if (!abandoned && (plan.tierKey === 'decisive' || plan.tierKey === 'victory')) state.stats.wins += 1;
+    state.stats.capitalKills += rep.capitals;
+    state.stats.kia += rep.kia;
+    state.stats.vesselsDestroyed += rep.vesselsKilled;
+    state.lastDeploy = Date.now();
+
+    const pct = Math.round(frac * 100);
+    state.log.push({
+      id: uid(),
+      kind: 'sim',
+      date: seDate(),
+      time: seTime(),
+      code: offer.code,
+      opName: offer.name,
+      planet: ctx.planet,
+      faction: ctx.faction,
+      resistance: res.label,
+      duration: ctx.duration,
+      tierKey: abandoned ? 'abandoned' : plan.tierKey,
+      tierLabel: abandoned ? `Abandoned at ${pct}%` : plan.tierLabel,
+      text: abandoned
+        ? `Withdrawal ordered ${pct}% into the operation. The Titan broke orbit under its own power and everything logged below still happened.`
+        : plan.text,
+      partsHit: Object.keys(plan.partDeltas).map(k => PART_LABELS[k]).join(', '),
+      moraleDelta,
+      spent: a.spent,
+      gained,
+      report: rep
+    });
+    if (state.log.length > 300) state.log = state.log.slice(-300);
+
+    state.activity = null;
+    showToast(offer.code + ': ' + (abandoned ? `abandoned at ${pct}%` : plan.tierLabel));
+  }
+
+  /* ---------------------------------------------------------------
+     LIVE STATUS BOARD — visible to all personnel, controls admin-only
+  --------------------------------------------------------------- */
+  function renderActivityPanel() {
+    const panel = document.getElementById('activityPanel');
+    const body = document.getElementById('activityBody');
+    if (!panel || !body) return;
+    const a = state.activity;
+    if (!a) { panel.style.display = 'none'; return; }
+    panel.style.display = '';
+
+    const p = activityProgress();
+    const pctText = Math.round(p * 100) + '%';
+    const end = a.phase === 'prep' ? a.prepEnd : a.end;
+    const remaining = fmtRemaining(end - Date.now());
+    document.getElementById('activityTag').textContent = activityLabel().toUpperCase();
+
+    let head = '', detail = '';
+    if (a.kind === 'mission') {
+      const o = a.offer;
+      head = `<div class="act-code">${esc(o.code)}</div>
+              <div class="act-meta">${esc(o.name)} · ${esc(o.ctx.planet)} · ${esc(o.ctx.faction)} · ${o.ctx.duration} day${o.ctx.duration === 1 ? '' : 's'}</div>`;
+      if (a.phase === 'prep') {
+        detail = `<div class="act-note">Launch preparation. Hellpods loading, Eagle wings arming, translation solution plotting. Abort now and the committed stores come straight back.</div>`;
+      } else {
+        const r = a.plan.report;
+        const sc = n => num(Math.round((n || 0) * p));
+        detail = `
+          <div class="act-metrics">
+            <div><span>Helldivers deployed</span><b>${sc(r.divers)}</b></div>
+            <div><span>Confirmed KIA</span><b>${sc(r.kia)}</b></div>
+            <div><span>Hellpod launches</span><b>${sc(r.hellpods)}</b></div>
+            <div><span>Eagle sorties</span><b>${sc(r.eagleSorties)}</b></div>
+            <div><span>Rounds expended</span><b>${sc(r.shells)}</b></div>
+            <div><span>Vessels destroyed</span><b>${sc(r.vesselsKilled)}</b></div>
+            <div><span>Capital-class kills</span><b>${sc(r.capitals)}</b></div>
+            <div><span>Hostile ground losses</span><b>${sc(r.groundKills)}</b></div>
+          </div>`;
+      }
+    } else if (a.kind === 'repair') {
+      head = `<div class="act-code">${a.mode === 'full' ? 'FULL REPAIRS' : 'MINOR REPAIRS'}</div>
+              <div class="act-meta">Orbital Hub · ${Object.keys(a.targets).map(k => PART_LABELS[k]).join(', ')}</div>`;
+      const done = Math.min(a.steps.length, Math.floor(p * a.steps.length) + 1);
+      detail = `<div class="act-steps">` + a.steps.slice(0, done).map((s, i) =>
+        `<div class="act-step ${i === done - 1 && p < 1 ? 'current' : 'done'}">${esc(s)}</div>`).join('') + `</div>`;
+    } else if (a.kind === 'resupply') {
+      head = `<div class="act-code">${a.mode === 'major' ? 'MAJOR RESUPPLY' : 'MINOR RESUPPLY'}</div>
+              <div class="act-meta">Orbital Hub · supply tenders alongside</div>`;
+      detail = `<div class="act-metrics">` + RES_KEYS.map(k => {
+        const v = a.from[k] + (a.targets[k] - a.from[k]) * p;
+        return `<div><span>${RES[k].label}</span><b>${num(v)} ${RES[k].unit}</b></div>`;
+      }).join('') + `</div>`;
+    }
+
+    const controls = unlocked
+      ? `<div class="btn-row">
+           <button class="secondary" id="activityAbortBtn">${a.kind === 'mission'
+             ? (a.phase === 'prep' ? 'Cancel launch (full refund)' : 'Abandon operation & withdraw')
+             : 'Break off and keep progress'}</button>
+         </div>`
+      : `<div class="act-note dim">Fleet Actual authorization required to alter this operation.</div>`;
+
+    body.innerHTML = `
+      ${head}
+      <div class="act-bar-row">
+        <div class="bar-track act-bar"><div class="bar-fill" style="width:${p * 100}%; background:var(--hazard)"></div></div>
+        <span class="act-pct">${pctText}</span>
+      </div>
+      <div class="act-clock">${a.phase === 'prep' ? 'Launch in' : 'Time remaining'}: <b>${remaining}</b></div>
+      ${detail}
+      ${controls}`;
+
+    const abort = document.getElementById('activityAbortBtn');
+    if (abort) abort.addEventListener('click', abortActivity);
+  }
+
+  function abortActivity() {
+    const a = state.activity;
+    if (!a) return;
+    const p = activityProgress();
+    if (a.kind === 'mission' && a.phase === 'prep') {
+      if (!confirm('CANCEL LAUNCH?\n\nThe operation has not begun. All committed stores will be returned in full and nothing will be logged.')) return;
+      Object.keys(a.spent).forEach(k => { state.res[k] = clampRes(state.res[k] + a.spent[k], RES[k].cap); });
+      state.activity = null;
+      render(); queueSave();
+      showToast('Launch cancelled. Stores returned to the holds.');
+      return;
+    }
+    if (a.kind === 'mission') {
+      if (!confirm(`ABANDON OPERATION?\n\nThe Titan will withdraw at ${Math.round(p * 100)}% completion. Everything achieved so far is permanent and will be filed as an abandoned operation. Committed stores are not refunded.`)) return;
+      concludeMission(p, true);
+    } else if (a.kind === 'repair') {
+      if (!confirm(`BREAK OFF REPAIRS?\n\nWork is ${Math.round(p * 100)}% complete. Repairs finished so far are kept; the stores spent are not refunded.`)) return;
+      concludeRepair(p);
+    } else if (a.kind === 'resupply') {
+      if (!confirm(`BREAK OFF RESUPPLY?\n\nLoading is ${Math.round(p * 100)}% complete. Stores already aboard are kept.`)) return;
+      concludeResupply(p);
+    }
+    render(); queueSave();
+  }
+
+  // Ticks once a second: advances phases, completes activities, refreshes the board.
+  function tickActivity() {
+    const a = state.activity;
+    if (!a) return;
+    const now = Date.now();
+
+    if (a.kind === 'mission' && a.phase === 'prep' && now >= a.prepEnd) {
+      a.phase = 'active';
+      a.start = a.prepEnd;
+      a.end = a.prepEnd + a.offer.ctx.duration * DAY;
+      a.plan = planOperation(a.offer, a.spent);
+      render(); queueSave();
+      showToast(a.offer.code + ' is underway.');
+      return;
+    }
+    if (a.phase === 'active' && a.end && now >= a.end) {
+      if (a.kind === 'mission') concludeMission(1, false);
+      else if (a.kind === 'repair') concludeRepair(1);
+      else if (a.kind === 'resupply') concludeResupply(1);
+      render(); queueSave();
+      return;
+    }
+    renderActivityPanel();
+    if (a.kind === 'resupply') {
+      const p = activityProgress();
+      RES_KEYS.forEach(k => { state.res[k] = clampRes(a.from[k] + (a.targets[k] - a.from[k]) * p, RES[k].cap); });
+      renderStores();
+    }
+  }
+
+  /* ---------------------------------------------------------------
+     LOG
+  --------------------------------------------------------------- */
+  function deltaLine(obj, sign) {
+    const keys = Object.keys(obj || {}).filter(k => obj[k] > 0);
+    if (!keys.length) return '—';
+    return keys.map(k => `${sign}${num(obj[k])} ${RES[k].unit}`).join(' · ');
+  }
+
+  function renderLog() {
+    const c = document.getElementById('logContainer');
+    document.getElementById('logTag').textContent = state.log.length + ' ENTRIES';
+    if (!state.log.length) {
+      c.innerHTML = '<div class="log-empty">No operations on record. Request orders from the board above to begin the campaign.</div>';
+      return;
+    }
+    const entries = state.log.slice().reverse().slice(0, 40);
+    c.innerHTML = entries.map(e => e.kind === 'field' ? fieldEntryHtml(e) : simEntryHtml(e)).join('');
+
+    if (unlocked) {
+      c.querySelectorAll('.log-entry').forEach((el, i) => {
+        const entry = entries[i];
+        if (!entry || !entry.id) return;
+        const btn = document.createElement('button');
+        btn.className = 'log-delete';
+        btn.textContent = 'strike from record';
+        btn.addEventListener('click', () => {
+          if (!confirm(`STRIKE THIS ENTRY?\n\n${entry.code || 'Entry'} — ${entry.planet || ''}\n\nThe log entry is removed permanently. Ship status, stores and statistics are not affected.`)) return;
+          state.log = state.log.filter(x => x.id !== entry.id);
+          render(); queueSave();
+          showToast('Entry struck from the record.');
+        });
+        el.appendChild(btn);
+      });
+    }
+  }
+
+  function simEntryHtml(e) {
+    const r = e.report || {};
+    return `
+      <div class="log-entry tier-${e.tierKey}">
+        <div class="log-op">${esc(e.code || '')}</div>
+        <div class="log-head">
+          <span>${esc(e.date)} · ${esc(e.planet)} <span class="meta">(${esc(e.opName || '')} · ${esc(e.faction)} · ${esc(e.resistance)} · ${e.duration}d)</span></span>
+          <span class="log-tier">${esc(e.tierLabel)}</span>
+        </div>
+        <div class="log-body">${esc(e.text)}</div>
+        <div class="log-deltas">
+          Systems damaged: ${esc(e.partsHit || 'none')} · Morale ${(e.moraleDelta >= 0 ? '+' : '') + e.moraleDelta}<br>
+          Expended: ${deltaLine(e.spent, '-')} · Recovered: ${deltaLine(e.gained, '+')}
+        </div>
+        <details class="full-report">
+          <summary>Full after-action report</summary>
+          <div class="report-grid">
+            <div class="rline">Orbital superiority: <b>${esc(r.superiority || '—')}</b> · Filed ${esc(e.time || '')}</div>
+            <div class="rsep"></div>
+            <div class="rline">Helldivers deployed: <b>${num(r.divers || 0)}</b> · KIA <b>${num(r.kia || 0)}</b> · Wounded <b>${num(r.wounded || 0)}</b></div>
+            <div class="rline">Hellpod launches: <b>${num(r.hellpods || 0)}</b> · Eagle &amp; Pelican sorties: <b>${num(r.eagleSorties || 0)}</b></div>
+            <div class="rline">Ship's company losses: <b>${num(r.crewLoss || 0)}</b> · Escorts lost: <b>${num(r.escortLoss || 0)}</b></div>
+            <div class="rsep"></div>
+            <div class="rline">Macro-cannon rounds expended: <b>${num(r.shells || 0)}</b></div>
+            <div class="rline">Hostile vessels engaged: <b>${num(r.vesselsEngaged || 0)}</b> · destroyed: <b>${num(r.vesselsKilled || 0)}</b> (${esc(r.vesselNoun || 'vessels')})</div>
+            <div class="rline">Capital-class kills: <b>${num(r.capitals || 0)}</b>${r.capitals ? ' — ' + esc(r.capitalName) : ''}</div>
+            <div class="rline">Estimated hostile ground losses: <b>${num(r.groundKills || 0)}</b></div>
+            <div class="rsep"></div>
+            <div class="rline">${esc(r.notable || '')}</div>
+          </div>
+        </details>
+      </div>`;
+  }
+
+  function fieldEntryHtml(e) {
+    return `
+      <div class="log-entry field">
+        <div class="log-op">${esc(e.code || 'FIELD REPORT')}</div>
+        <div class="log-head">
+          <span>${esc(e.date)} · ${esc(e.planet)} <span class="meta">(${esc(e.faction)} · field-verified)</span></span>
+          <span class="log-tier">${esc(e.tierLabel)}</span>
+        </div>
+        <div class="log-body">${esc(e.text || 'No narrative filed.')}</div>
+        <div class="log-deltas">
+          Helldivers deployed: ${num(e.divers || 0)} · KIA: ${num(e.kia || 0)} · Enemy losses: ${num(e.kills || 0)}<br>
+          Filed by Task Force Omega at ${esc(e.time || '')} — confirmed by Fleet Actual.
+        </div>
+      </div>`;
+  }
+
+  /* ---------------------------------------------------------------
+     WIRING
+  --------------------------------------------------------------- */
+  function populatePlanets() {
+    const dl = document.getElementById('planetList');
+    const groups = SECTORS.slice().sort((a, b) => a.sector.localeCompare(b.sector));
+    dl.innerHTML = groups.map(g =>
+      g.planets.map(p => `<option value="${esc(p)}">${esc(g.sector)}</option>`).join('')
+    ).join('');
+  }
+
+  function buildAllocRows() {
+    document.getElementById('allocRows').innerHTML = RES_KEYS.map(k => `
+      <div class="alloc-row">
+        <label for="alloc_${k}">${RES[k].label} <span class="cur" id="cur_${k}">—</span></label>
+        <input type="number" id="alloc_${k}" placeholder="0" step="1">
+        <button class="secondary" data-alloc="${k}">Add</button>
+      </div>`).join('');
+    document.querySelectorAll('#allocRows button[data-alloc]').forEach(b => {
+      b.addEventListener('click', () => {
+        const k = b.getAttribute('data-alloc');
+        const input = document.getElementById('alloc_' + k);
+        const v = parseInt(input.value, 10);
+        if (!v) { showToast('Enter a quantity to allocate.'); return; }
+        state.res[k] = clampRes(state.res[k] + v, RES[k].cap);
+        input.value = '';
+        render(); queueSave();
+        showToast(`${RES[k].label} ${v > 0 ? 'increased' : 'drawn down'} — now ${num(state.res[k])} ${RES[k].unit}.`);
+      });
+    });
+  }
+
+  function restoreOrderForm() {
+    if (state.offerCtx) {
+      document.getElementById('planetInput').value = state.offerCtx.planet || '';
+      document.getElementById('factionSelect').value = state.offerCtx.faction || 'Terminids';
+      document.getElementById('resistanceSelect').value = state.offerCtx.resistance || 'medium';
+      document.getElementById('durationRange').value = state.offerCtx.duration || 4;
+    }
+    const d = document.getElementById('durationRange').value;
+    document.getElementById('durationDays').textContent = d + (d === '1' ? ' day' : ' days');
+  }
+
+  document.getElementById('durationRange').addEventListener('input', e => {
+    const v = e.target.value;
+    document.getElementById('durationDays').textContent = v + (v === '1' ? ' day' : ' days');
+  });
+
+  document.getElementById('requestBtn').addEventListener('click', () => {
+    const planet = document.getElementById('planetInput').value.trim();
+    if (!planet) { showToast('Enter a target world or void sector first.'); document.getElementById('planetInput').focus(); return; }
+    if (isBusy()) { showToast('The Titan is already committed. Resolve the current operation first.'); return; }
+    if (avgParts() < 32) { showToast('Ship condition too low to receive orders.'); return; }
+    const ctx = {
+      planet,
+      faction: document.getElementById('factionSelect').value,
+      resistance: document.getElementById('resistanceSelect').value,
+      duration: parseInt(document.getElementById('durationRange').value, 10)
+    };
+    state.offerCtx = ctx;
+    state.offers = generateOffers(ctx);
+    render(); queueSave();
+    showToast('Orders received. ' + state.offers.length + ' operations available over ' + planet + '.');
+  });
+
+  document.getElementById('repairMinorBtn').addEventListener('click', () => startRepair('minor'));
+  document.getElementById('repairFullBtn').addEventListener('click', () => startRepair('full'));
+  document.getElementById('resupplyMinorBtn').addEventListener('click', () => startResupply('minor'));
+  document.getElementById('resupplyMajorBtn').addEventListener('click', () => startResupply('major'));
+
+  document.querySelectorAll('button[data-alloc="morale"], button[data-alloc="crew"], button[data-alloc="escorts"]').forEach(b => {
+    b.addEventListener('click', () => {
+      const k = b.getAttribute('data-alloc');
+      const input = document.getElementById('alloc' + k.charAt(0).toUpperCase() + k.slice(1));
+      const v = parseInt(input.value, 10);
+      if (!v) { showToast('Enter a value to apply.'); return; }
+      if (k === 'morale') state.morale = clampPct(state.morale + v);
+      if (k === 'crew') state.crew = Math.max(0, Math.min(CREW_MAX, state.crew + v));
+      if (k === 'escorts') state.escorts = Math.max(0, Math.min(ESCORT_MAX, state.escorts + v));
+      input.value = '';
+      render(); queueSave();
+      showToast('Manifest updated.');
+    });
+  });
+
+  document.getElementById('topOffBtn').addEventListener('click', () => {
+    if (!confirm(`BREAK THE RESERVE SEALS?\n\nEvery store jumps to full capacity instantly. This bypasses the resupply schedule entirely and is recorded permanently.\n\nSeals broken to date: ${state.emergency.stores}`)) return;
+    RES_KEYS.forEach(k => state.res[k] = RES[k].cap);
+    state.emergency.stores += 1;
+    render(); queueSave();
+    showToast('Holds filled to capacity. The quartermaster looks suspicious but says nothing.');
+  });
+
+  document.getElementById('fullRefitBtn').addEventListener('click', () => {
+    if (!confirm(`AUTHORIZE EMERGENCY REFIT?\n\nEvery system returns to 100%, the complement is made whole and the battle group is replaced — instantly, with no yard time. Recorded permanently.\n\nEmergency refits to date: ${state.emergency.refit}`)) return;
+    PART_KEYS.forEach(k => state.parts[k] = 100);
+    state.morale = clampPct(Math.max(state.morale, 85));
+    state.crew = CREW_MAX;
+    state.escorts = ESCORT_MAX;
+    state.emergency.refit += 1;
+    render(); queueSave();
+    showToast('Drydock refit complete. The Titan of Liberty is whole again.');
+  });
+
+  document.getElementById('frSubmit').addEventListener('click', () => {
+    const planet = document.getElementById('frPlanet').value.trim();
+    const opName = document.getElementById('frOp').value.trim();
+    if (!planet) { showToast('A field report needs a world.'); return; }
+    const outcomeKey = document.getElementById('frOutcome').value;
+    const tier = TIERS.find(t => t.key === outcomeKey);
+    state.log.push({
+      id: uid(),
+      kind: 'field',
+      date: seDate(),
+      time: seTime(),
+      code: opName || 'UNNAMED OPERATION',
+      planet,
+      faction: document.getElementById('frFaction').value,
+      tierKey: outcomeKey,
+      tierLabel: tier.label + ' (field)',
+      divers: parseInt(document.getElementById('frDivers').value, 10) || 0,
+      kia: parseInt(document.getElementById('frKia').value, 10) || 0,
+      kills: parseInt(document.getElementById('frKills').value, 10) || 0,
+      text: document.getElementById('frNotes').value.trim()
+    });
+    if (state.log.length > 300) state.log = state.log.slice(-300);
+    ['frOp','frPlanet','frDivers','frKia','frKills','frNotes'].forEach(id => document.getElementById(id).value = '');
+    render(); queueSave();
+    showToast('Field report filed. Command acknowledges Task Force Omega.');
+  });
+
+  document.getElementById('exportBtn').addEventListener('click', () => {
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'titan-of-liberty-record-' + seDate() + '.json';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    showToast('Record archived to your device.');
+  });
+
+  document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFile').click());
+  document.getElementById('importFile').addEventListener('change', e => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(reader.result);
+        state = Object.assign(defaultState(), parsed);
+        state.parts = Object.assign(defaultState().parts, parsed.parts || {});
+        state.res = Object.assign(defaultState().res, parsed.res || {});
+        state.stats = Object.assign(defaultState().stats, parsed.stats || {});
+        restoreOrderForm();
+        render(); saveState();
+        showToast('Archive restored.');
+      } catch (err) {
+        showToast('That file is not a valid fleet record.');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', async () => {
+    if (!confirm('SCUTTLE THE RECORD?\n\nThis wipes the Titan of Liberty back to a fresh hull, clears every store, statistic and transmission log entry, and cannot be undone.\n\nA separate scuttling authorization code is required.')) return;
+    const entered = prompt('Enter the 4-digit scuttling authorization code:');
+    if (entered === null) return;
+    let h;
+    try { h = await sha256Hex((entered || '').trim()); } catch (e) { showToast('Authorization unavailable in this browser.'); return; }
+    if (h !== SCUTTLE_CODE_HASH) { showToast('Scuttling authorization rejected. Record intact.'); return; }
+    if (!confirm('FINAL CONFIRMATION\n\nAuthorization accepted. Scuttle the entire fleet record now?')) return;
+    state = defaultState();
+    restoreOrderForm();
+    render(); saveState();
+    showToast('Record scuttled. A new Titan of Liberty rolls out of drydock.');
+  });
+
+  /* ---------------------------------------------------------------
+     COMMAND AUTHENTICATION — gates controls, never touches shared state
+  --------------------------------------------------------------- */
+  // The transmission log, status board, stores, systems and readiness are public to the
+  // whole clan. Only things that actually change the ship's state are gated.
+  const GATED_IDS = ['opsPanel', 'qmConsole', 'fieldConsole', 'footerRow', 'resupplyPanel', 'emergencyConsole'];
+
+  function setUnlockedUI(isUnlocked) {
+    unlocked = isUnlocked;
+    GATED_IDS.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = isUnlocked ? '' : 'none';
+    });
+    const repairControls = document.getElementById('repairControls');
+    const repairLockedNote = document.getElementById('repairLockedNote');
+    if (repairControls) repairControls.style.display = isUnlocked ? '' : 'none';
+    if (repairLockedNote) repairLockedNote.style.display = isUnlocked ? 'none' : '';
+
+    document.getElementById('accessLockedView').style.display = isUnlocked ? 'none' : '';
+    document.getElementById('accessUnlockedView').style.display = isUnlocked ? '' : 'none';
+    document.getElementById('accessTag').textContent = isUnlocked ? 'AUTHENTICATED' : 'LOCKED';
+
+    render();
+  }
+
+  async function tryUnlock() {
+    const input = document.getElementById('accessCode');
+    const val = (input.value || '').trim();
+    const btn = document.getElementById('accessSubmit');
+    btn.disabled = true;
+    let hash;
+    try {
+      hash = await sha256Hex(val);
+    } catch (e) {
+      btn.disabled = false;
+      document.getElementById('accessNote').textContent = 'Authentication unavailable in this browser context.';
+      document.getElementById('accessNote').style.color = 'var(--blood)';
+      return;
+    }
+    btn.disabled = false;
+    if (val.length === 6 && hash === ACCESS_CODE_HASH) {
+      try { window.localStorage.setItem(UNLOCK_KEY, '1'); } catch (e) {}
+      input.value = '';
+      document.getElementById('accessNote').textContent = '';
+      setUnlockedUI(true);
+      showToast('Fleet Actual authenticated. Command console unlocked on this device.');
+    } else {
+      document.getElementById('accessNote').textContent = 'Access code not recognized.';
+      document.getElementById('accessNote').style.color = 'var(--blood)';
+      showToast('Access denied.');
+    }
+  }
+
+  document.getElementById('accessSubmit').addEventListener('click', tryUnlock);
+  document.getElementById('accessCode').addEventListener('input', e => {
+    e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 6);
+  });
+  document.getElementById('accessCode').addEventListener('keydown', e => {
+    if (e.key === 'Enter') tryUnlock();
+  });
+  document.getElementById('lockBtn').addEventListener('click', () => {
+    try { window.localStorage.removeItem(UNLOCK_KEY); } catch (e) {}
+    setUnlockedUI(false);
+    showToast('Command console locked on this device.');
+  });
+
+  // periodic upkeep
+  setInterval(() => { tickActivity(); }, 1000);
+  setInterval(() => { renderChrono(); renderCooldown(); }, 30000);
+  setInterval(() => { if (isBusy()) saveState(true); }, 60000);
+  setInterval(() => { applyPassiveRecovery(); render(); queueSave(); }, 300000);
+
+  window.addEventListener('beforeunload', () => { Store.saveSync(JSON.stringify(state)); });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) Store.saveSync(JSON.stringify(state)); });
+
+  populatePlanets();
+  buildAllocRows();
+  loadState();
+
+  let alreadyUnlocked = false;
+  try { alreadyUnlocked = window.localStorage.getItem(UNLOCK_KEY) === '1'; } catch (e) {}
+  setUnlockedUI(alreadyUnlocked);
+})();
+</script>
+
+</body>
+</html>
